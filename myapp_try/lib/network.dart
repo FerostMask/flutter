@@ -43,12 +43,13 @@ class NetworkForUDP {
     try {
       wifiIPv4 = await _networkInfo.getWifiIP();
       print(wifiIPv4);
-    } on PlatformException catch (e) {}
+    } on PlatformException catch (e) {
+      print(e);
+    }
   }
 
   String getIP() {
     _getLocalIP();
-    print(wifiIPv4);
     return wifiIPv4 != null ? wifiIPv4.toString() : "...";
   }
 }
