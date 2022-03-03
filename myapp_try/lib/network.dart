@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:udp/udp.dart';
+import 'package:flutter/services.dart';
+import 'package:network_info_plus/network_info_plus.dart';
 
 class NetworkForUDP {
   NetworkForUDP({
@@ -10,6 +12,7 @@ class NetworkForUDP {
 
   final int receivePort; // 接收端口
   final int sendPort; // 发送端口
+  String? wifiIPv4;
   String rcvContent = "default"; // 接收内容
 
   void initUDP() async {
@@ -33,5 +36,19 @@ class NetworkForUDP {
           InternetAddress("192.168.31.89"),
           port: Port(sendPort),
         ));
+  }
+
+  Future<void> _getLocalIP() async {
+    final NetworkInfo _networkInfo = NetworkInfo();
+    try {
+      wifiIPv4 = await _networkInfo.getWifiIP();
+      print(wifiIPv4);
+    } on PlatformException catch (e) {}
+  }
+
+  String getIP() {
+    _getLocalIP();
+    print(wifiIPv4);
+    return wifiIPv4 != null ? wifiIPv4.toString() : "...";
   }
 }

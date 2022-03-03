@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/home': (context) => const HomePage(title: 'HomePage'),
         '/scope': (context) => ScopePage(
-              broadcastIP: 'udpInstance.getLocalIP()',
+              broadcastIP: udpInstance.getIP(),
             ),
       },
     );

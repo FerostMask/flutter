@@ -6,7 +6,7 @@ import 'dart:async';
 class ScopePage extends StatelessWidget {
   const ScopePage({Key? key, required this.broadcastIP}) : super(key: key);
 
-  final broadcastIP;
+  final String broadcastIP;
 
   @override
   Widget build(BuildContext context) {
