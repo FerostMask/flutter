@@ -2,13 +2,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:myapp_try/scope.dart';
 import 'package:myapp_try/network.dart';
+import 'package:myapp_try/serial.dart';
 
 var udpInstance = NetworkForUDP(receivePort: 9000, sendPort: 8000);
 
 void main() async {
 // 网络初始化
   udpInstance.initUDP();
-  udpInstance.send(message: "hello!");
   runApp(const MyApp());
 }
 
@@ -23,13 +23,15 @@ class MyApp extends StatelessWidget {
       routes: {
         '/home': (context) => const HomePage(title: 'HomePage'),
         '/scope': (context) => ScopePage(
-              broadcastIP: udpInstance.getIP(),
+              broadcastIP: udpInstance.getIP(), // 调用接口获取本地IP
             ),
+        '/serial': (context) => const SerialPage(),
       },
     );
   }
 }
 
+// 主界面
 class HomePage extends StatefulWidget {
   const HomePage({Key? key, required this.title}) : super(key: key);
 
@@ -43,8 +45,18 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // 主界面样式
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(
+          widget.title,
+          style: const TextStyle(
+            color: Colors.blue,
+            fontWeight: FontWeight.bold,
+            fontFamily: "汉仪尚巍手书W",
+            fontSize: 30,
+          ),
+        ),
+        backgroundColor: Colors.white,
       ),
       body: Center(
         child: GridView.count(
@@ -56,9 +68,23 @@ class _HomePageState extends State<HomePage> {
           children: const <Widget>[
             OptionBox(
               targetPage: "/scope",
-              icon: Icon(Icons.insights,
-                  size: 100, color: Color.fromARGB(200, 168, 167, 167)),
+              icon: Icon(
+                // 示波器
+                Icons.insights,
+                size: 100,
+                color: Color.fromARGB(200, 168, 167, 167),
+              ),
               describe: 'Scope',
+            ),
+            OptionBox(
+              // 串口
+              targetPage: "/serial",
+              icon: Icon(
+                Icons.question_answer,
+                size: 100,
+                color: Color.fromARGB(200, 168, 167, 167),
+              ),
+              describe: "SerialPort",
             ),
           ],
         ),
@@ -67,6 +93,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+// 主界面选项盒
 class OptionBox extends StatelessWidget {
   const OptionBox({
     Key? key,
