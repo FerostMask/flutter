@@ -4,9 +4,7 @@ import 'dart:math' as math;
 import 'dart:async';
 
 class ScopePage extends StatelessWidget {
-  const ScopePage({Key? key, required this.broadcastIP}) : super(key: key);
-
-  final String broadcastIP;
+  const ScopePage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +13,7 @@ class ScopePage extends StatelessWidget {
         title: const Text('Scope'),
       ),
       body: Center(
-        child: Text("broadcast: $broadcastIP"),
+        child: Text('Text'),
       ),
     );
   }

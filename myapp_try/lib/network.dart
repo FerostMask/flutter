@@ -3,12 +3,21 @@ import 'package:udp/udp.dart';
 import 'package:flutter/services.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 
+List<Device?> devices = [];
+
+class Device {
+  String? receivePort;
+  String? sendPort;
+}
+
 class NetworkForUDP {
   NetworkForUDP({
     // 构造函数
     required this.receivePort,
     required this.sendPort,
-  });
+  }) {
+    _getLocalIP();
+  }
 
   final int receivePort; // 接收端口
   final int sendPort; // 发送端口
@@ -42,14 +51,13 @@ class NetworkForUDP {
     final NetworkInfo _networkInfo = NetworkInfo();
     try {
       wifiIPv4 = await _networkInfo.getWifiIP();
-      print(wifiIPv4);
+      // print(wifiIPv4);
     } on PlatformException catch (e) {
       print(e);
     }
   }
 
   String getIP() {
-    _getLocalIP();
     return wifiIPv4 != null ? wifiIPv4.toString() : "...";
   }
 }

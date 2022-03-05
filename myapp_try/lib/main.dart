@@ -1,14 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:myapp_try/scope.dart';
-import 'package:myapp_try/network.dart';
 import 'package:myapp_try/serial.dart';
-
-var udpInstance = NetworkForUDP(receivePort: 9000, sendPort: 8000);
+import 'package:myapp_try/devmanage.dart';
 
 void main() async {
 // 网络初始化
-  udpInstance.initUDP();
   runApp(const MyApp());
 }
 
@@ -22,10 +18,9 @@ class MyApp extends StatelessWidget {
       initialRoute: '/home',
       routes: {
         '/home': (context) => const HomePage(title: 'HomePage'),
-        '/scope': (context) => ScopePage(
-              broadcastIP: udpInstance.getIP(), // 调用接口获取本地IP
-            ),
+        '/scope': (context) => ScopePage(),
         '/serial': (context) => const SerialPage(),
+        '/manage': (context) => DevManagePage(),
       },
     );
   }
@@ -67,9 +62,9 @@ class _HomePageState extends State<HomePage> {
           crossAxisCount: 2,
           children: const <Widget>[
             OptionBox(
+              // 示波器
               targetPage: "/scope",
               icon: Icon(
-                // 示波器
                 Icons.insights,
                 size: 100,
                 color: Color.fromARGB(200, 168, 167, 167),
@@ -85,6 +80,15 @@ class _HomePageState extends State<HomePage> {
                 color: Color.fromARGB(200, 168, 167, 167),
               ),
               describe: "SerialPort",
+            ),
+            OptionBox(
+              targetPage: '/manage',
+              icon: Icon(
+                Icons.settings_applications,
+                size: 100,
+                color: Color.fromARGB(200, 168, 167, 167),
+              ),
+              describe: "Device",
             ),
           ],
         ),
@@ -110,6 +114,7 @@ class OptionBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 100,
+      padding: EdgeInsetsDirectional.only(top: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10.0),
         color: Colors.white,
