@@ -13,10 +13,11 @@ class _DevManagePageState extends State<DevManagePage> {
   void handleButton() async {
     // 点击加号后的对话框
     final Device? item = await showDialog<Device>(
-        context: context,
-        builder: (BuildContext context) {
-          return PortInput();
-        });
+      context: context,
+      builder: (BuildContext context) {
+        return PortInput();
+      },
+    );
     if (item == null) return;
     devices.add(item);
   }
@@ -76,36 +77,52 @@ class _PortInputState extends State<PortInput> {
           child: FocusTraversalGroup(
             child: Column(
               children: <Widget>[
-                TextFormField(
-                  decoration: const InputDecoration(
-                    hintText: 'Enter receive port',
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 24, end: 24),
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                      hintText: 'Enter receive port',
+                    ),
+                    onSaved: (String? value) {
+                      // 存储输入框中的内容
+                      item.receivePort = value;
+                    },
+                    validator: portValidator,
                   ),
-                  onSaved: (String? value) {
-                    // 存储输入框中的内容
-                    item.receivePort = value;
-                  },
-                  validator: portValidator,
                 ),
-                TextFormField(
-                  decoration: const InputDecoration(
-                    hintText: 'Enter send port',
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 24, end: 24),
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                      hintText: 'Enter send port',
+                    ),
+                    onSaved: (String? value) {
+                      // 存储输入框中的内容
+                      item.sendPort = value;
+                    },
+                    validator: portValidator,
                   ),
-                  onSaved: (String? value) {
-                    item.sendPort = value;
-                  },
-                  validator: portValidator,
                 ),
               ],
             ),
           ),
         ),
-        ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              Navigator.pop(context, item);
-            }
-          },
-          child: Text('submit'),
+        Padding(
+          // 页面适配
+          padding: const EdgeInsetsDirectional.only(
+            start: 30,
+            end: 30,
+            top: 15,
+            bottom: 0,
+          ),
+          child: ElevatedButton(
+            onPressed: () {
+              if (_formKey.currentState!.validate()) {
+                Navigator.pop(context, item);
+              }
+            },
+            child: Text('submit'),
+          ),
         ),
       ],
     );
