@@ -282,7 +282,7 @@ class _PortInputState extends State<PortInput> {
   @override
   Widget build(BuildContext context) {
     return SimpleDialog(
-      title: const Text('Port Initial'),
+      title: const Text('New Device'),
       children: [
         //  输入框
         Form(
@@ -340,7 +340,7 @@ class _PortInputState extends State<PortInput> {
                 Navigator.pop(context, item);
               }
             },
-            child: Text('submit'),
+            child: Text('Add'),
           ),
         ),
       ],
