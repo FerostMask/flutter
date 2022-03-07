@@ -18,7 +18,7 @@
 
 ![IMG_3/5/2022](https://ferost-myphotos.oss-cn-shenzhen.aliyuncs.com/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202022-03-07%20135950.jpg)
 
-可以通过`TextFormField`输入任意内容了！并且有专门的`validator`来检测输入的端口是否和法。
+可以通过`TextFormField`输入任意内容了！并且有专门的`validator`来检测输入的端口是否合法。
 
 ## Getting Started
 
