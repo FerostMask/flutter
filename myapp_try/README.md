@@ -4,6 +4,8 @@
 
 # 开发日志
 
+### 3/8/2022 更改设备框修改逻辑，支持单独修改端口
+
 ### 3/6/2022 完善设备框
 
 ![IMG_3/6/2022](https://ferost-myphotos.oss-cn-shenzhen.aliyuncs.com/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202022-03-07%20140434.jpg)

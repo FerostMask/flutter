@@ -24,12 +24,19 @@ class NetworkForUDP {
     required this.sendPort,
   }) {
     _getLocalIP();
+    initUDP();
   }
 
   final String receivePort; // 接收端口
   final String sendPort; // 发送端口
   String? wifiIPv4;
   String rcvContent = "default"; // 接收内容
+
+  bool _close = false;
+
+  void close() {
+    _close = true;
+  }
 
   void initUDP() async {
     final int port = int.parse(receivePort);
@@ -40,8 +47,15 @@ class NetworkForUDP {
         rcvContent = String.fromCharCodes(datagram!.data);
       }
       print(rcvContent);
-      send(message: "Hello!");
+      if (_close == true) receiver.close();
     });
+  }
+
+  void serachDevice() async {
+    final int port = int.parse(sendPort);
+    var sender = await UDP.bind(Endpoint.any(port: Port(port)));
+    await sender.send('Hello!'.codeUnits, Endpoint.broadcast(port: Port(port)));
+    sender.close();
   }
 
   void send({required String message}) async {
@@ -54,6 +68,7 @@ class NetworkForUDP {
           InternetAddress("192.168.31.89"),
           port: Port(port),
         ));
+    // sender.close();
   }
 
   Future<void> _getLocalIP() async {

@@ -99,17 +99,38 @@ class _DeviceBoxState extends State<DeviceBox> {
   // List<String> deviceList = ["No Device Select"];
   String? dropdownValue;
   Device itemTemp = Device(bind: false);
+  bool alterAssert = false;
+  bool alterAssertTemp = false;
   final GlobalKey<FormState> _formKeyRcv = GlobalKey<FormState>();
   final GlobalKey<FormState> _formKeySend = GlobalKey<FormState>();
 
   void _handleConnect() {}
+
+  void assertAlter(String oriValue, String newValue) {
+    if (newValue != null && newValue.isNotEmpty) {
+      if (newValue != oriValue) {
+        alterAssertTemp = true;
+      }
+    } else {
+      alterAssertTemp = false;
+    }
+    if (alterAssert != alterAssertTemp) {
+      // 变化检测
+      alterAssert = alterAssertTemp;
+      setState(() {});
+    }
+  }
+
   void _handleUpdate() {
     // 处理更新按键，生成新设备
     if (itemTemp.sendPort != null) {
       if (itemTemp.sendPort!.isNotEmpty) {
         if (_formKeySend.currentState!.validate()) {
           setState(() {
-            devices[widget.index]!.sendPort = itemTemp.sendPort!;
+            // 修改断言
+            alterAssert = false;
+            alterAssertTemp = false;
+            devices[widget.index]!.sendPort = itemTemp.sendPort!; // 修改端口
           });
         }
       }
@@ -118,8 +139,13 @@ class _DeviceBoxState extends State<DeviceBox> {
       if (itemTemp.receivePort!.isNotEmpty) {
         if (_formKeyRcv.currentState!.validate()) {
           setState(() {
-            devices[widget.index]!.receivePort = itemTemp.receivePort;
+            // 修改断言
+            alterAssert = false;
+            alterAssertTemp = false;
+            devices[widget.index]!.receivePort = itemTemp.receivePort; // 修改端口
+            devices[widget.index]!.udp!.close(); // 关闭端口
             devices[widget.index]!.udp = NetworkForUDP(
+              // 创建新udp实例
               receivePort: devices[widget.index]!.receivePort!,
               sendPort: devices[widget.index]!.sendPort!,
             );
@@ -129,7 +155,10 @@ class _DeviceBoxState extends State<DeviceBox> {
     }
   }
 
-  void _handleRefresh() {}
+  void _handleRefresh() {
+    // devices[widget.index]!.udp!.serachDevice();
+    devices[widget.index]!.udp!.send(message: "Hello!");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -184,6 +213,8 @@ class _DeviceBoxState extends State<DeviceBox> {
                     child: TextFormField(
                       onSaved: (String? value) {
                         itemTemp.receivePort = value;
+                        assertAlter(devices[widget.index]!.receivePort!,
+                            itemTemp.receivePort!);
                       },
                       validator: Validators.isPort,
                       decoration: InputDecoration(
@@ -209,6 +240,8 @@ class _DeviceBoxState extends State<DeviceBox> {
                     child: TextFormField(
                       onSaved: (String? value) {
                         itemTemp.sendPort = value;
+                        assertAlter(devices[widget.index]!.sendPort!,
+                            itemTemp.sendPort!);
                       },
                       validator: Validators.isPort,
                       decoration: InputDecoration(
@@ -231,12 +264,12 @@ class _DeviceBoxState extends State<DeviceBox> {
             Padding(
               padding: const EdgeInsets.only(right: 10, bottom: 20),
               child: TextButton(
-                onPressed: _handleUpdate,
-                child: const Text(
-                  'Refresh',
+                onPressed: alterAssert ? _handleUpdate : _handleRefresh,
+                child: Text(
+                  alterAssert ? "Update" : "Refresh",
                   style: TextStyle(
                     fontSize: 20,
-                    color: Colors.grey,
+                    color: alterAssert ? Colors.blue : Colors.grey,
                   ),
                 ),
               ),
