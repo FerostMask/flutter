@@ -6,7 +6,7 @@
 
 ### 3/8/2022 更改设备框修改逻辑，支持单独修改端口，区分刷新、修改按键
 
-![屏幕截图 2022-03-08 220730](C:\Users\Szasd\Pictures\Saved Pictures\屏幕截图 2022-03-08 220730.jpg)
+![屏幕截图 2022-03-08 220730](https://ferost-myphotos.oss-cn-shenzhen.aliyuncs.com/202203082216585.jpg)
 
 现在可以单独修改其中一个端口了，在输入框中输入新的内容后原先`Refresh`按键会变为`Update`按键。两者拥有独立功能。
 
