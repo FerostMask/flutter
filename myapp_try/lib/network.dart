@@ -10,7 +10,11 @@ class Device {
 
   String? receivePort;
   String? sendPort;
+  List<String> deviceList = ["No Device Select"];
+
   bool bind;
+
+  NetworkForUDP? udp;
 }
 
 class NetworkForUDP {
@@ -22,14 +26,15 @@ class NetworkForUDP {
     _getLocalIP();
   }
 
-  final int receivePort; // 接收端口
-  final int sendPort; // 发送端口
+  final String receivePort; // 接收端口
+  final String sendPort; // 发送端口
   String? wifiIPv4;
   String rcvContent = "default"; // 接收内容
 
   void initUDP() async {
+    final int port = int.parse(receivePort);
     // UDP初始化
-    var receiver = await UDP.bind(Endpoint.any(port: Port(receivePort)));
+    var receiver = await UDP.bind(Endpoint.any(port: Port(port)));
     receiver.asStream(timeout: const Duration(seconds: 120)).listen((datagram) {
       if (datagram?.data != null) {
         rcvContent = String.fromCharCodes(datagram!.data);
@@ -40,13 +45,14 @@ class NetworkForUDP {
   }
 
   void send({required String message}) async {
+    final int port = int.parse(sendPort);
     // UDP发送数据
-    var sender = await UDP.bind(Endpoint.any(port: Port(sendPort)));
+    var sender = await UDP.bind(Endpoint.any(port: Port(port)));
     await sender.send(
         message.codeUnits,
         Endpoint.unicast(
           InternetAddress("192.168.31.89"),
-          port: Port(sendPort),
+          port: Port(port),
         ));
   }
 

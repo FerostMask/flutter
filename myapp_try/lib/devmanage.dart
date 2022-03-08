@@ -74,7 +74,7 @@ class _DevManageState extends State<DevManage> {
           ),
         );
       },
-      separatorBuilder: (BuildContext context, int index) => Divider(
+      separatorBuilder: (BuildContext context, int index) => const Divider(
         indent: 20,
         endIndent: 20,
       ),
@@ -96,21 +96,40 @@ class DeviceBox extends StatefulWidget {
 }
 
 class _DeviceBoxState extends State<DeviceBox> {
-  List<String> deviceList = ["No Device Select", 'Device1'];
+  // List<String> deviceList = ["No Device Select"];
   String? dropdownValue;
   Device itemTemp = Device(bind: false);
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKeyRcv = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKeySend = GlobalKey<FormState>();
 
   void _handleConnect() {}
-  void _handleRefresh() {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        itemTemp.bind = devices[widget.index]!.bind;
-        devices.insert(widget.index, itemTemp);
-        devices.removeAt(widget.index + 1);
-      });
+  void _handleUpdate() {
+    // 处理更新按键，生成新设备
+    if (itemTemp.sendPort != null) {
+      if (itemTemp.sendPort!.isNotEmpty) {
+        if (_formKeySend.currentState!.validate()) {
+          setState(() {
+            devices[widget.index]!.sendPort = itemTemp.sendPort!;
+          });
+        }
+      }
+    }
+    if (itemTemp.receivePort != null) {
+      if (itemTemp.receivePort!.isNotEmpty) {
+        if (_formKeyRcv.currentState!.validate()) {
+          setState(() {
+            devices[widget.index]!.receivePort = itemTemp.receivePort;
+            devices[widget.index]!.udp = NetworkForUDP(
+              receivePort: devices[widget.index]!.receivePort!,
+              sendPort: devices[widget.index]!.sendPort!,
+            );
+          });
+        }
+      }
     }
   }
+
+  void _handleRefresh() {}
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +157,10 @@ class _DeviceBoxState extends State<DeviceBox> {
               dropdownValue = newValue;
             });
           },
-          items: deviceList.map<DropdownMenuItem<String>>((String value) {
+          // 下拉列表
+          items: devices[widget.index]!
+              .deviceList
+              .map<DropdownMenuItem<String>>((String value) {
             return DropdownMenuItem<String>(
               value: value,
               child: Text(value),
@@ -146,16 +168,16 @@ class _DeviceBoxState extends State<DeviceBox> {
           }).toList(),
         ),
         //  端口输入
-        Form(
-          key: _formKey,
-          onChanged: () {
-            Form.of(primaryFocus!.context!)!.save();
-          },
-          child: FocusTraversalGroup(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Padding(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Form(
+              key: _formKeyRcv,
+              onChanged: () {
+                Form.of(primaryFocus!.context!)!.save();
+              },
+              child: FocusTraversalGroup(
+                child: Padding(
                   padding: const EdgeInsets.only(left: 10, right: 10),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints.tightFor(width: 150),
@@ -172,7 +194,15 @@ class _DeviceBoxState extends State<DeviceBox> {
                     ),
                   ),
                 ),
-                Padding(
+              ),
+            ),
+            Form(
+              key: _formKeySend,
+              onChanged: () {
+                Form.of(primaryFocus!.context!)!.save();
+              },
+              child: FocusTraversalGroup(
+                child: Padding(
                   padding: const EdgeInsets.only(left: 10),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints.tightFor(width: 150),
@@ -189,9 +219,9 @@ class _DeviceBoxState extends State<DeviceBox> {
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
         // 按键
         Row(
@@ -201,7 +231,7 @@ class _DeviceBoxState extends State<DeviceBox> {
             Padding(
               padding: const EdgeInsets.only(right: 10, bottom: 20),
               child: TextButton(
-                onPressed: _handleRefresh,
+                onPressed: _handleUpdate,
                 child: const Text(
                   'Refresh',
                   style: TextStyle(
@@ -279,6 +309,14 @@ class _PortInputState extends State<PortInput> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   Device item = Device(bind: false);
 
+  void _handleOnPressed() {
+    if (_formKey.currentState!.validate()) {
+      item.udp = NetworkForUDP(
+          receivePort: item.receivePort!, sendPort: item.sendPort!);
+      Navigator.pop(context, item);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SimpleDialog(
@@ -335,11 +373,7 @@ class _PortInputState extends State<PortInput> {
           ),
           child: ElevatedButton(
             // 提交按钮
-            onPressed: () {
-              if (_formKey.currentState!.validate()) {
-                Navigator.pop(context, item);
-              }
-            },
+            onPressed: _handleOnPressed,
             child: Text('Add'),
           ),
         ),
