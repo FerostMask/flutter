@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/home',
       routes: {
         '/home': (context) => const HomePage(title: 'HomePage'),
-        '/scope': (context) => ScopePage(),
+        '/scope': (context) => Scope(),
         '/serial': (context) => const SerialPage(),
         '/manage': (context) => DevManagePage(),
       },

@@ -10,11 +10,14 @@ class Device {
 
   String? receivePort;
   String? sendPort;
+  String receiveContent = "";
   List<String> deviceList = ["No Device Select"];
 
   bool bind;
 
   NetworkForUDP? udp;
+
+  void contentParsing(String content) {}
 }
 
 class NetworkForUDP {
@@ -22,6 +25,7 @@ class NetworkForUDP {
     // 构造函数
     required this.receivePort,
     required this.sendPort,
+    required this.parsing,
   }) {
     _getLocalIP();
     initUDP();
@@ -33,6 +37,8 @@ class NetworkForUDP {
   String rcvContent = "default"; // 接收内容
 
   bool _close = false;
+
+  Function parsing;
 
   void close() {
     _close = true;
@@ -46,6 +52,7 @@ class NetworkForUDP {
       if (datagram?.data != null) {
         rcvContent = String.fromCharCodes(datagram!.data);
       }
+      parsing(rcvContent);
       print(rcvContent);
       if (_close == true) receiver.close();
     });

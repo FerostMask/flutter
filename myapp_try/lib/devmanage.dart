@@ -148,6 +148,7 @@ class _DeviceBoxState extends State<DeviceBox> {
               // 创建新udp实例
               receivePort: devices[widget.index]!.receivePort!,
               sendPort: devices[widget.index]!.sendPort!,
+              parsing: devices[widget.index]!.contentParsing,
             );
           });
         }
@@ -345,7 +346,10 @@ class _PortInputState extends State<PortInput> {
   void _handleOnPressed() {
     if (_formKey.currentState!.validate()) {
       item.udp = NetworkForUDP(
-          receivePort: item.receivePort!, sendPort: item.sendPort!);
+        receivePort: item.receivePort!,
+        sendPort: item.sendPort!,
+        parsing: item.contentParsing,
+      );
       Navigator.pop(context, item);
     }
   }

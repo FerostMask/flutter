@@ -4,6 +4,9 @@
         "array": "cpp",
         "vector": "cpp",
         "xstring": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "magenc.h": "c",
+        "istream": "c",
+        "chrono": "c"
     }
 }
