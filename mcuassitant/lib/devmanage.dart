@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-//?---------------
-//?       路由页面
-//?===============
+//?-------------------------
+//?                 路由页面
+//?=========================
 class DevManagePage extends StatefulWidget {
   const DevManagePage({Key? key}) : super(key: key);
 
@@ -11,6 +11,7 @@ class DevManagePage extends StatefulWidget {
 }
 
 class _DevManagePageState extends State<DevManagePage> {
+  //! 浮空按钮处理函数
   void handleButton() async {}
 
   @override
@@ -27,9 +28,108 @@ class _DevManagePageState extends State<DevManagePage> {
   }
 }
 
-//?---------------
-//?  设备栏 | List
-//?===============
+//?-------------------------
+//?                 校验器类
+//?=========================
+class Validators {
+  static String? isPort(String? value) {
+    // 端口合法性检测
+    if (value == null) return "Please input a number";
+    int number = 0;
+    RegExp port = RegExp(r"\d");
+    if (port.hasMatch(value)) {
+      number = int.parse(value);
+    }
+    return ((port.hasMatch(value) && number >= 0 && number < 65536)
+        ? null
+        : 'illegal port!');
+  }
+}
+
+//?-------------------------
+//?          对话框 | Dialog
+//?=========================
+class PortInput extends StatefulWidget {
+  const PortInput({Key? key, required this.title}) : super(key: key);
+
+  final String title;
+
+  @override
+  _PortInputState createState() => _PortInputState();
+}
+
+class _PortInputState extends State<PortInput> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  // 处理按键
+  void _handleOnPressed() {
+    if (_formKey.currentState!.validate()) {
+      Navigator.pop(context);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SimpleDialog(
+      title: Text(widget.title),
+      children: [
+        //? 输入框
+        Form(
+          key: _formKey,
+          onChanged: () {
+            Form.of(primaryFocus!.context!)!.save();
+          },
+          child: FocusTraversalGroup(
+            child: Column(
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(left: 24, right: 24),
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                      hintText: 'Enter Receive Port',
+                      labelText: 'Receive Port',
+                    ),
+                    onSaved: (String? value) {},
+                    validator: Validators.isPort,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 24, right: 24),
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                      hintText: 'Enter Send Port',
+                      labelText: 'Send Port',
+                    ),
+                    onSaved: (String? value) {},
+                    validator: Validators.isPort,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        //? 添加按钮
+        Padding(
+          // 页面适配
+          padding: const EdgeInsetsDirectional.only(
+            start: 30,
+            end: 30,
+            top: 15,
+            bottom: 0,
+          ),
+          child: ElevatedButton(
+            // 提交按钮
+            onPressed: _handleOnPressed,
+            child: const Text('Add'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+//?-------------------------
+//?            设备栏 | List
+//?=========================
 class DeviceList extends StatefulWidget {
   const DeviceList({Key? key, required this.deviceCount}) : super(key: key);
 
