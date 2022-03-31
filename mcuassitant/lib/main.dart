@@ -25,20 +25,43 @@ class MyApp extends StatelessWidget {
   }
 }
 
+//! 路由页面描述类
+class RouteDescribe {
+  RouteDescribe({
+    required this.icon,
+    required this.targetPage,
+    required this.pageDescribe,
+  });
+
+  final Widget icon;
+  final String targetPage;
+  final String pageDescribe;
+}
+
 class HomePage extends StatefulWidget {
   HomePage({Key? key, required this.title}) : super(key: key);
   //! 路由器信息
   final String title;
-  final List<Widget> icons = <Widget>[
-    const Icon(Icons.insights,
-        size: 100, color: Color.fromARGB(200, 168, 167, 167)),
-    const Icon(Icons.question_answer,
-        size: 100, color: Color.fromARGB(200, 168, 167, 167)),
-    const Icon(Icons.settings_applications,
-        size: 100, color: Color.fromARGB(200, 168, 167, 167)),
+  final List<RouteDescribe> routes = [
+    RouteDescribe(
+      icon: const Icon(Icons.insights,
+          size: 100, color: Color.fromARGB(200, 168, 167, 167)),
+      targetPage: '/scope',
+      pageDescribe: 'Scope',
+    ),
+    RouteDescribe(
+      icon: const Icon(Icons.question_answer,
+          size: 100, color: Color.fromARGB(200, 168, 167, 167)),
+      targetPage: '/serial',
+      pageDescribe: 'SerialPort',
+    ),
+    RouteDescribe(
+      icon: const Icon(Icons.settings_applications,
+          size: 100, color: Color.fromARGB(200, 168, 167, 167)),
+      targetPage: '/manage',
+      pageDescribe: 'Device',
+    ),
   ];
-  final List<String> targetPages = <String>['/scope', '/serial', '/manage'];
-  final List<String> describes = <String>['Scope', 'SerialPort', 'Device'];
 
   @override
   _HomePageState createState() => _HomePageState();
@@ -65,14 +88,14 @@ class _HomePageState extends State<HomePage> with RouteAware {
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2),
           padding: const EdgeInsets.all(5),
-          itemCount: widget.targetPages.length,
+          itemCount: widget.routes.length,
           itemBuilder: (BuildContext context, int index) {
             return Padding(
               padding: const EdgeInsets.all(5),
               child: OptionBox(
-                targetPage: widget.targetPages[index],
-                icon: widget.icons[index],
-                describe: widget.describes[index],
+                targetPage: widget.routes[index].targetPage,
+                icon: widget.routes[index].icon,
+                describe: widget.routes[index].pageDescribe,
               ),
             );
           },

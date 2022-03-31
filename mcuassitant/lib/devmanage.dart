@@ -18,7 +18,7 @@ class _DevManagePageState extends State<DevManagePage> {
     final Device? item = await showDialog<Device>(
       context: context,
       builder: (BuildContext context) {
-        return PortInput(title: 'New Device');
+        return const PortInput(title: 'New Device');
       },
     );
     if (item == null) return;

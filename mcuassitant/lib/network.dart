@@ -24,6 +24,23 @@ class Device {
     _close = true;
   }
 
+  //? 接收并处理数据函数
+  void receiveWithParsing(Function parsing) async {
+    final int port = int.parse(receivePort);
+    String rcvContent = '';
+    var receiver = await UDP.bind(Endpoint.any(port: Port(port))); // 创建接收实例
+    // 监听端口
+    receiver.asStream(timeout: const Duration(seconds: 120)).listen((datagram) {
+      // 接收并处理数据
+      if (datagram?.data != null) {
+        rcvContent = String.fromCharCodes(datagram!.data);
+        // print(rcvContent);
+        parsing(rcvContent);
+        if (_close == true) receiver.close();
+      }
+    });
+  }
+
   //? 标准UDP接收初始化
   void receiveInit() async {
     final int port = int.parse(receivePort);
