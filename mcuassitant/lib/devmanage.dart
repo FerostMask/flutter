@@ -13,7 +13,18 @@ class DevManagePage extends StatefulWidget {
 
 class _DevManagePageState extends State<DevManagePage> {
   //! 浮空按钮处理函数
-  void handleButton() async {}
+  void handleButton() async {
+    //? 生成对话框
+    final Device? item = await showDialog<Device>(
+      context: context,
+      builder: (BuildContext context) {
+        return PortInput(title: 'New Device');
+      },
+    );
+    if (item == null) return;
+    devices.add(item);
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,11 +71,15 @@ class PortInput extends StatefulWidget {
 }
 
 class _PortInputState extends State<PortInput> {
+  String? receivePort;
+  String? sendPort;
+
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   // 处理按键
   void _handleOnPressed() {
     if (_formKey.currentState!.validate()) {
-      Navigator.pop(context);
+      Navigator.pop(
+          context, Device(receivePort: receivePort!, sendPort: sendPort!));
     }
   }
 
@@ -82,6 +97,7 @@ class _PortInputState extends State<PortInput> {
           child: FocusTraversalGroup(
             child: Column(
               children: <Widget>[
+                //? 接收端口输入
                 Padding(
                   padding: const EdgeInsets.only(left: 24, right: 24),
                   child: TextFormField(
@@ -89,10 +105,13 @@ class _PortInputState extends State<PortInput> {
                       hintText: 'Enter Receive Port',
                       labelText: 'Receive Port',
                     ),
-                    onSaved: (String? value) {},
+                    onSaved: (String? value) {
+                      receivePort = value;
+                    },
                     validator: Validators.isPort,
                   ),
                 ),
+                //? 发送端口输入
                 Padding(
                   padding: const EdgeInsets.only(left: 24, right: 24),
                   child: TextFormField(
@@ -100,7 +119,9 @@ class _PortInputState extends State<PortInput> {
                       hintText: 'Enter Send Port',
                       labelText: 'Send Port',
                     ),
-                    onSaved: (String? value) {},
+                    onSaved: (String? value) {
+                      sendPort = value;
+                    },
                     validator: Validators.isPort,
                   ),
                 ),
