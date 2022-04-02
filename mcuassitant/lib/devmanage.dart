@@ -232,6 +232,7 @@ class _OptionalDeviceState extends State<OptionalDevice> {
   @override
   Widget build(BuildContext context) {
     // 构造列表
+    dropdownValue = devices[widget.index]!.selectDeivce;
     optionalDevices =
         List<String>.from(devices[widget.index]!.deviceMap.keys.toList());
     return DropdownButton<String>(
@@ -251,6 +252,7 @@ class _OptionalDeviceState extends State<OptionalDevice> {
         // 设备选择
         setState(() {
           dropdownValue = newValue;
+          devices[widget.index]!.selectDeivce = newValue;
         });
       },
       items: optionalDevices.map<DropdownMenuItem<String>>((String value) {

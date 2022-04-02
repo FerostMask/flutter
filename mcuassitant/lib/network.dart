@@ -13,6 +13,7 @@ class Device {
 
   bool bind = false; // 设备绑定
   Map deviceMap = {'No Device Select': ''}; // 设备表
+  String? selectDeivce;
 
   String receivePort; // 接收端口
   String sendPort; // 发送端口
