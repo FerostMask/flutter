@@ -38,7 +38,10 @@ class Device {
         rcvContent = String.fromCharCodes(datagram!.data);
         // print(rcvContent);
         parsing(rcvContent);
-        if (_close == true) receiver.close();
+        if (_close == true) {
+          receiver.close();
+          _close = false;
+        }
       }
     });
   }
@@ -54,7 +57,10 @@ class Device {
         rcvContent = String.fromCharCodes(datagram!.data);
       }
       print(rcvContent);
-      if (_close == true) receiver.close();
+      if (_close == true) {
+        receiver.close();
+        _close = false;
+      }
     });
   }
 
