@@ -204,6 +204,44 @@ class DeviceBox extends StatefulWidget {
 }
 
 class _DeviceBoxState extends State<DeviceBox> {
+  String? rcvPort;
+  String? sendPort;
+
+  final GlobalKey<FormState> _formKeyRcv = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKeySend = GlobalKey<FormState>();
+
+  bool alterAssert = false;
+  bool alterAssertTemp = false;
+  //! 变换断言函数，决定是否更新端口
+  void assertAlter(String oriValue, String? newValue) {
+    // 比较新旧值是否相同
+    if (newValue != null && newValue.isNotEmpty) {
+      if (newValue != oriValue) {
+        alterAssertTemp = true;
+      }
+    } else {
+      alterAssertTemp = false;
+    }
+    // 状态机，在 变化/未变化 间切换
+    if (alterAssert != alterAssertTemp) {
+      setState(() {
+        alterAssert = alterAssertTemp;
+      });
+    }
+  }
+
+  void _handleUpdate() {}
+
+  void _handleRcvSaved(String? value) {
+    rcvPort = value;
+    assertAlter(devices[widget.index]!.receivePort, rcvPort);
+  }
+
+  void _handleSendSaved(String? value) {
+    sendPort = value;
+    assertAlter(devices[widget.index]!.sendPort, sendPort);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -211,6 +249,23 @@ class _DeviceBoxState extends State<DeviceBox> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         OptionalDevice(index: widget.index),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            ChangeValueField(
+              formKey: _formKeyRcv,
+              onSaved: _handleRcvSaved,
+              hint: 'Enter new port',
+              label: 'Receive Port: ${devices[widget.index]!.receivePort}',
+            ),
+            ChangeValueField(
+              formKey: _formKeySend,
+              onSaved: _handleSendSaved,
+              hint: 'Enter new port',
+              label: 'Send Port: ${devices[widget.index]!.sendPort}',
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -232,6 +287,7 @@ class _OptionalDeviceState extends State<OptionalDevice> {
   @override
   Widget build(BuildContext context) {
     // 构造列表
+    dropdownValue = devices[widget.index]!.selectDeivce;
     optionalDevices =
         List<String>.from(devices[widget.index]!.deviceMap.keys.toList());
     return DropdownButton<String>(
@@ -251,6 +307,7 @@ class _OptionalDeviceState extends State<OptionalDevice> {
         // 设备选择
         setState(() {
           dropdownValue = newValue;
+          devices[widget.index]!.selectDeivce = newValue;
         });
       },
       items: optionalDevices.map<DropdownMenuItem<String>>((String value) {
@@ -259,6 +316,54 @@ class _OptionalDeviceState extends State<OptionalDevice> {
           child: Text(value),
         );
       }).toList(),
+    );
+  }
+}
+
+class ChangeValueField extends StatefulWidget {
+  const ChangeValueField({
+    Key? key,
+    required this.formKey,
+    required this.onSaved,
+    required this.hint,
+    required this.label,
+  }) : super(key: key);
+
+  final GlobalKey<FormState> formKey;
+  final Function(String?) onSaved;
+  final String hint;
+  final String label;
+
+  @override
+  _ChangeValueField createState() => _ChangeValueField();
+}
+
+class _ChangeValueField extends State<ChangeValueField> {
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: widget.formKey,
+      onChanged: () {
+        // 在输入框内容变化时调用保存函数
+        Form.of(primaryFocus!.context!)!.save();
+      },
+      child: FocusTraversalGroup(
+        child: Padding(
+          padding: const EdgeInsets.only(left: 10, right: 10),
+          child: ConstrainedBox(
+            // 限制盒子
+            constraints: const BoxConstraints.tightFor(width: 150),
+            child: TextFormField(
+              onSaved: widget.onSaved, // 被调用的保存函数
+              validator: Validators.isPort, // 被调用的校验器，通过key调用该方法
+              decoration: InputDecoration(
+                hintText: widget.hint, // 提示
+                labelText: widget.label, // 标签信息
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

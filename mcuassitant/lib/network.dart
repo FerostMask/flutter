@@ -13,6 +13,7 @@ class Device {
 
   bool bind = false; // 设备绑定
   Map deviceMap = {'No Device Select': ''}; // 设备表
+  String? selectDeivce;
 
   String receivePort; // 接收端口
   String sendPort; // 发送端口
@@ -37,7 +38,10 @@ class Device {
         rcvContent = String.fromCharCodes(datagram!.data);
         // print(rcvContent);
         parsing(rcvContent);
-        if (_close == true) receiver.close();
+        if (_close == true) {
+          receiver.close();
+          _close = false;
+        }
       }
     });
   }
@@ -53,7 +57,10 @@ class Device {
         rcvContent = String.fromCharCodes(datagram!.data);
       }
       print(rcvContent);
-      if (_close == true) receiver.close();
+      if (_close == true) {
+        receiver.close();
+        _close = false;
+      }
     });
   }
 
