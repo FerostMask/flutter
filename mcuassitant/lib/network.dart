@@ -11,15 +11,16 @@ List<Device?> devices = [];
 class Device {
   Device({required this.receivePort, required this.sendPort});
 
-  bool bind = false;
+  bool bind = false; // 设备绑定
+  Map deviceMap = {'No Device Select': ''}; // 设备表
 
-  String receivePort;
-  String sendPort;
+  String receivePort; // 接收端口
+  String sendPort; // 发送端口
 
   String? wifiIPv4;
 
-  bool _close = false;
-  // 关闭UDP实例
+  bool _close = false; // 关闭接收实例标志位
+  // 关闭UDP接收实例
   void close() {
     _close = true;
   }

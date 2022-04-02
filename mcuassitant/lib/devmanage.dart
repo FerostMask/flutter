@@ -36,6 +36,9 @@ class _DevManagePageState extends State<DevManagePage> {
         child: const Icon(Icons.add),
         onPressed: handleButton,
       ),
+      body: DeviceList(
+        deviceCount: devices.length,
+      ),
     );
   }
 }
@@ -176,12 +179,86 @@ class _DeviceList extends State<DeviceList> {
               color: Colors.white,
               borderRadius: BorderRadius.all(Radius.circular(10)),
             ),
+            child: DeviceBox(index: index),
           ),
         );
       },
       separatorBuilder: (BuildContext context, int index) =>
           const Divider(indent: 20, endIndent: 20),
       itemCount: widget.deviceCount,
+    );
+  }
+}
+
+//?-------------------------
+//?   设备盒子 | 由设备栏生成
+//?=========================
+class DeviceBox extends StatefulWidget {
+  // 在创建设备盒子时创建接收实例并传入分析函数，
+  const DeviceBox({Key? key, required this.index}) : super(key: key);
+
+  final int index;
+
+  @override
+  _DeviceBoxState createState() => _DeviceBoxState();
+}
+
+class _DeviceBoxState extends State<DeviceBox> {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        OptionalDevice(index: widget.index),
+      ],
+    );
+  }
+}
+
+class OptionalDevice extends StatefulWidget {
+  const OptionalDevice({Key? key, required this.index}) : super(key: key);
+
+  final int index;
+
+  @override
+  _OptionalDeviceState createState() => _OptionalDeviceState();
+}
+
+class _OptionalDeviceState extends State<OptionalDevice> {
+  String? dropdownValue;
+  late List<String> optionalDevices;
+
+  @override
+  Widget build(BuildContext context) {
+    // 构造列表
+    optionalDevices =
+        List<String>.from(devices[widget.index]!.deviceMap.keys.toList());
+    return DropdownButton<String>(
+      value: dropdownValue, // 选择的值
+      icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+      elevation: 16, // 高度
+      style: const TextStyle(
+        fontWeight: FontWeight.bold,
+        color: Colors.grey,
+        fontSize: 20,
+      ),
+      underline: Container(
+        height: 2,
+        color: Colors.grey,
+      ),
+      onChanged: (String? newValue) {
+        // 设备选择
+        setState(() {
+          dropdownValue = newValue;
+        });
+      },
+      items: optionalDevices.map<DropdownMenuItem<String>>((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value),
+        );
+      }).toList(),
     );
   }
 }
