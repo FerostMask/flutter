@@ -77,10 +77,22 @@ class _PortInputState extends State<PortInput> {
   String? receivePort;
   String? sendPort;
 
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKeyRcv = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKeySend = GlobalKey<FormState>();
+
+  void _onSavedRcv(String? value) {
+    receivePort = value;
+  }
+
+  void _onSavedSend(String? value) {
+    sendPort = value;
+  }
+
   // 处理按键
   void _handleOnPressed() {
-    if (_formKey.currentState!.validate()) {
+    bool validateA = _formKeyRcv.currentState!.validate();
+    bool validateB = _formKeySend.currentState!.validate();
+    if (validateA && validateB) {
       Navigator.pop(
           context, Device(receivePort: receivePort!, sendPort: sendPort!));
     }
@@ -92,52 +104,35 @@ class _PortInputState extends State<PortInput> {
       title: Text(widget.title),
       children: [
         //? 输入框
-        Form(
-          key: _formKey,
-          onChanged: () {
-            Form.of(primaryFocus!.context!)!.save();
-          },
-          child: FocusTraversalGroup(
-            child: Column(
-              children: <Widget>[
-                //? 接收端口输入
-                Padding(
-                  padding: const EdgeInsets.only(left: 24, right: 24),
-                  child: TextFormField(
-                    decoration: const InputDecoration(
-                      hintText: 'Enter Receive Port',
-                      labelText: 'Receive Port',
-                    ),
-                    onSaved: (String? value) {
-                      receivePort = value;
-                    },
-                    validator: Validators.isPort,
-                  ),
-                ),
-                //? 发送端口输入
-                Padding(
-                  padding: const EdgeInsets.only(left: 24, right: 24),
-                  child: TextFormField(
-                    decoration: const InputDecoration(
-                      hintText: 'Enter Send Port',
-                      labelText: 'Send Port',
-                    ),
-                    onSaved: (String? value) {
-                      sendPort = value;
-                    },
-                    validator: Validators.isPort,
-                  ),
-                ),
-              ],
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            ChangeValueField(
+              //? 接收端口输入
+              formKey: _formKeyRcv,
+              onSaved: _onSavedRcv,
+              hint: 'Enter receive port',
+              label: 'receive port',
+              padding: const EdgeInsets.only(left: 24, right: 24),
+              constraint: const BoxConstraints.tightFor(width: 230),
             ),
-          ),
+            ChangeValueField(
+              //? 发送端口输入
+              formKey: _formKeySend,
+              onSaved: _onSavedSend,
+              hint: 'Enter send port',
+              label: 'send port',
+              padding: const EdgeInsets.only(left: 24, right: 24),
+              constraint: const BoxConstraints.tightFor(width: 230),
+            ),
+          ],
         ),
         //? 添加按钮
         Padding(
           // 页面适配
           padding: const EdgeInsetsDirectional.only(
-            start: 30,
-            end: 30,
+            start: 24,
+            end: 24,
             top: 15,
             bottom: 0,
           ),
@@ -174,7 +169,7 @@ class _DeviceList extends State<DeviceList> {
             alignment: Alignment.center,
             padding: const EdgeInsets.only(left: 10, right: 10),
             margin:
-                const EdgeInsets.only(left: 20, right: 20, top: 10, bottom: 10),
+                const EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 10),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.all(Radius.circular(10)),
@@ -204,42 +199,81 @@ class DeviceBox extends StatefulWidget {
 }
 
 class _DeviceBoxState extends State<DeviceBox> {
-  String? rcvPort;
-  String? sendPort;
+  String? _rcvPort;
+  String? _sendPort;
 
   final GlobalKey<FormState> _formKeyRcv = GlobalKey<FormState>();
   final GlobalKey<FormState> _formKeySend = GlobalKey<FormState>();
 
-  bool alterAssert = false;
-  bool alterAssertTemp = false;
+  bool _alterAssert = false;
+  bool _alterAssertTemp = false;
   //! 变换断言函数，决定是否更新端口
   void assertAlter(String oriValue, String? newValue) {
     // 比较新旧值是否相同
     if (newValue != null && newValue.isNotEmpty) {
       if (newValue != oriValue) {
-        alterAssertTemp = true;
+        _alterAssertTemp = true;
       }
     } else {
-      alterAssertTemp = false;
+      _alterAssertTemp = false;
     }
     // 状态机，在 变化/未变化 间切换
-    if (alterAssert != alterAssertTemp) {
+    if (_alterAssert != _alterAssertTemp) {
       setState(() {
-        alterAssert = alterAssertTemp;
+        _alterAssert = _alterAssertTemp;
       });
     }
   }
 
-  void _handleUpdate() {}
+  void _handleUpdate() {
+    // 处理发送端口
+    if (_sendPort != null && _sendPort!.isNotEmpty) {
+      if (_formKeySend.currentState!.validate()) {
+        // 另一个框为空，随便修改
+        if (_rcvPort == null || _rcvPort != null && _rcvPort!.isEmpty) {
+          _alterAssert = false;
+          _alterAssertTemp = false;
+        }
+        setState(() {
+          devices[widget.index]!.sendPort = _sendPort!;
+        });
+      }
+    }
+    if (_rcvPort != null && _rcvPort!.isNotEmpty) {
+      if (_formKeyRcv.currentState!.validate()) {
+        // 另一个框为空，随便修改
+        if (_sendPort == null || _sendPort != null && _sendPort!.isEmpty) {
+          _alterAssert = false;
+          _alterAssertTemp = false;
+        }
+        setState(() {
+          devices[widget.index]!.receivePort = _rcvPort!;
+        });
+      }
+    }
+    // 判断是否恢复断言 | 无法判断某框为空的情况
+    if (_sendPort != null && _rcvPort != null) {
+      if (_sendPort!.isNotEmpty && _rcvPort!.isNotEmpty) {
+        if (_sendPort == devices[widget.index]!.sendPort) {
+          if (_rcvPort == devices[widget.index]!.receivePort) {
+            _alterAssert = false;
+            _alterAssertTemp = false;
+          }
+        }
+      }
+    }
+  }
+
+  void _handleRefresh() {}
 
   void _handleRcvSaved(String? value) {
-    rcvPort = value;
-    assertAlter(devices[widget.index]!.receivePort, rcvPort);
+    _rcvPort = value;
+    assertAlter(devices[widget.index]!.receivePort, _rcvPort);
   }
 
   void _handleSendSaved(String? value) {
-    sendPort = value;
-    assertAlter(devices[widget.index]!.sendPort, sendPort);
+    _sendPort = value;
+    assertAlter(devices[widget.index]!.sendPort, _sendPort);
   }
 
   @override
@@ -266,12 +300,24 @@ class _DeviceBoxState extends State<DeviceBox> {
             ),
           ],
         ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: <Widget>[
+            ChangeButton(
+              text: _alterAssert ? 'Update' : 'Refresh',
+              color: _alterAssert ? Colors.blue : Colors.grey,
+              onChanged: _alterAssert ? _handleUpdate : _handleRefresh,
+            ),
+          ],
+        ),
       ],
     );
   }
 }
 
 class OptionalDevice extends StatefulWidget {
+  //? 选择框
   const OptionalDevice({Key? key, required this.index}) : super(key: key);
 
   final int index;
@@ -321,18 +367,23 @@ class _OptionalDeviceState extends State<OptionalDevice> {
 }
 
 class ChangeValueField extends StatefulWidget {
+  //? 输入框
   const ChangeValueField({
     Key? key,
     required this.formKey,
     required this.onSaved,
     required this.hint,
     required this.label,
+    this.padding,
+    this.constraint,
   }) : super(key: key);
 
   final GlobalKey<FormState> formKey;
   final Function(String?) onSaved;
   final String hint;
   final String label;
+  final EdgeInsetsGeometry? padding;
+  final BoxConstraints? constraint; // 横向限制器
 
   @override
   _ChangeValueField createState() => _ChangeValueField();
@@ -349,10 +400,12 @@ class _ChangeValueField extends State<ChangeValueField> {
       },
       child: FocusTraversalGroup(
         child: Padding(
-          padding: const EdgeInsets.only(left: 10, right: 10),
+          padding: widget.padding ??
+              const EdgeInsets.only(left: 10, right: 10, bottom: 10),
           child: ConstrainedBox(
             // 限制盒子
-            constraints: const BoxConstraints.tightFor(width: 150),
+            constraints:
+                widget.constraint ?? const BoxConstraints.tightFor(width: 150),
             child: TextFormField(
               onSaved: widget.onSaved, // 被调用的保存函数
               validator: Validators.isPort, // 被调用的校验器，通过key调用该方法
@@ -361,6 +414,44 @@ class _ChangeValueField extends State<ChangeValueField> {
                 labelText: widget.label, // 标签信息
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ChangeButton extends StatefulWidget {
+  //? 按钮
+  const ChangeButton({
+    Key? key,
+    required this.text,
+    this.color,
+    required this.onChanged,
+    this.fontSize,
+  }) : super(key: key);
+
+  final String text;
+  final Color? color;
+  final Function()? onChanged;
+  final double? fontSize;
+
+  @override
+  _ChangeButtonState createState() => _ChangeButtonState();
+}
+
+class _ChangeButtonState extends State<ChangeButton> {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 10, bottom: 10),
+      child: TextButton(
+        onPressed: widget.onChanged,
+        child: Text(
+          widget.text,
+          style: TextStyle(
+            fontSize: widget.fontSize ?? 20,
+            color: widget.color ?? Colors.blue,
           ),
         ),
       ),
