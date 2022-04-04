@@ -52,7 +52,9 @@ class Validators {
     if (value == null) return "Please input a number";
     int number = 0;
     RegExp port = RegExp(r"\d");
-    if (port.hasMatch(value)) {
+    if (value.contains('-')) {
+      number = -1;
+    } else if (port.hasMatch(value)) {
       number = int.parse(value);
     }
     return ((port.hasMatch(value) && number >= 0 && number < 65536)
@@ -225,6 +227,10 @@ class _DeviceBoxState extends State<DeviceBox> {
     }
   }
 
+//? 传输内容分析函数
+  void _parsing(String value) {}
+
+//? 更新按钮处理
   void _handleUpdate() {
     // 处理发送端口
     if (_sendPort != null && _sendPort!.isNotEmpty) {
@@ -246,7 +252,10 @@ class _DeviceBoxState extends State<DeviceBox> {
           _alterAssert = false;
           _alterAssertTemp = false;
         }
+        //? 关闭之前的UDP接收实例
+        devices[widget.index]!.close();
         setState(() {
+          // 变更接收口
           devices[widget.index]!.receivePort = _rcvPort!;
         });
       }
@@ -264,8 +273,9 @@ class _DeviceBoxState extends State<DeviceBox> {
     }
   }
 
+//? 刷新按钮处理
   void _handleRefresh() {}
-
+//? 处理输入框保存内容
   void _handleRcvSaved(String? value) {
     _rcvPort = value;
     assertAlter(devices[widget.index]!.receivePort, _rcvPort);
@@ -278,6 +288,8 @@ class _DeviceBoxState extends State<DeviceBox> {
 
   @override
   Widget build(BuildContext context) {
+    //? 创建UDP接收实例
+    devices[widget.index]!.receiveWithParsing(_parsing);
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,

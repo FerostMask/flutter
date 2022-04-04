@@ -20,27 +20,27 @@ class Device {
 
   String? wifiIPv4;
 
+  late UDP receiver;
   bool _close = false; // 关闭接收实例标志位
   // 关闭UDP接收实例
   void close() {
     _close = true;
+    receiver.close();
   }
 
   //? 接收并处理数据函数
   void receiveWithParsing(Function parsing) async {
     final int port = int.parse(receivePort);
-    String rcvContent = '';
-    var receiver = await UDP.bind(Endpoint.any(port: Port(port))); // 创建接收实例
+    String? rcvContent;
+    receiver = await UDP.bind(Endpoint.any(port: Port(port))); // 创建接收实例
     // 监听端口
-    receiver.asStream(timeout: const Duration(seconds: 120)).listen((datagram) {
+    receiver.asStream(timeout: const Duration(seconds: 10)).listen((datagram) {
       // 接收并处理数据
-      if (datagram?.data != null) {
-        rcvContent = String.fromCharCodes(datagram!.data);
-        // print(rcvContent);
-        parsing(rcvContent);
-        if (_close == true) {
-          receiver.close();
-          _close = false;
+      if (datagram != null) {
+        rcvContent = String.fromCharCodes(datagram.data);
+        if (rcvContent != null && rcvContent!.isNotEmpty) {
+          print(rcvContent);
+          parsing(rcvContent);
         }
       }
     });
@@ -50,17 +50,17 @@ class Device {
   void receiveInit() async {
     final int port = int.parse(receivePort);
     String rcvContent = "";
-    var receiver = await UDP.bind(Endpoint.any(port: Port(port))); // 创建接收实例
+    receiver = await UDP.bind(Endpoint.any(port: Port(port))); // 创建接收实例
     // 监听端口
     receiver.asStream(timeout: const Duration(seconds: 120)).listen((datagram) {
       if (datagram?.data != null) {
         rcvContent = String.fromCharCodes(datagram!.data);
       }
-      print(rcvContent);
-      if (_close == true) {
-        receiver.close();
-        _close = false;
-      }
+      // print(rcvContent);
+      // if (_close == true) {
+      //   receiver.close();
+      //   _close = false;
+      // }
     });
   }
 
