@@ -18,13 +18,11 @@ class Device {
   String receivePort; // 接收端口
   String sendPort; // 发送端口
 
-  String? wifiIPv4;
+  static String? wifiIPv4;
 
   late UDP receiver;
-  bool _close = false; // 关闭接收实例标志位
   // 关闭UDP接收实例
   void close() {
-    _close = true;
     receiver.close();
   }
 
@@ -47,25 +45,25 @@ class Device {
   }
 
   //? 标准UDP接收初始化
-  void receiveInit() async {
-    final int port = int.parse(receivePort);
-    String rcvContent = "";
-    receiver = await UDP.bind(Endpoint.any(port: Port(port))); // 创建接收实例
-    // 监听端口
-    receiver.asStream(timeout: const Duration(seconds: 120)).listen((datagram) {
-      if (datagram?.data != null) {
-        rcvContent = String.fromCharCodes(datagram!.data);
-      }
-      // print(rcvContent);
-      // if (_close == true) {
-      //   receiver.close();
-      //   _close = false;
-      // }
-    });
-  }
+  // void receiveInit() async {
+  //   final int port = int.parse(receivePort);
+  //   String rcvContent = "";
+  //   receiver = await UDP.bind(Endpoint.any(port: Port(port))); // 创建接收实例
+  //   // 监听端口
+  //   receiver.asStream(timeout: const Duration(seconds: 120)).listen((datagram) {
+  //     if (datagram?.data != null) {
+  //       rcvContent = String.fromCharCodes(datagram!.data);
+  //     }
+  //     // print(rcvContent);
+  //     // if (_close == true) {
+  //     //   receiver.close();
+  //     //   _close = false;
+  //     // }
+  //   });
+  // }
 
   //? 获取本机IP
-  Future<void> _getLocalIP() async {
+  static Future<void> getLocalIP() async {
     final NetworkInfo _networkInfo = NetworkInfo();
     try {
       // 异步执行，获得值后返回
@@ -76,7 +74,8 @@ class Device {
     }
   }
 
-  String getIP() {
-    return wifiIPv4 != null ? wifiIPv4.toString() : "...";
+  static String getIP() {
+    getLocalIP();
+    return wifiIPv4 ?? '...';
   }
 }
