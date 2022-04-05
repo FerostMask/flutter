@@ -31,7 +31,12 @@ class _DevManagePageState extends State<DevManagePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Device Manage"),
+        //? 更多按键
+        actions: const <Widget>[
+          OptionMenu(),
+        ],
       ),
+      //? 浮空按钮
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
         onPressed: handleButton,
@@ -39,6 +44,45 @@ class _DevManagePageState extends State<DevManagePage> {
       body: DeviceList(
         deviceCount: devices.length,
       ),
+    );
+  }
+}
+
+enum Options { ip }
+
+//? 更多选项
+class OptionMenu extends StatefulWidget {
+  const OptionMenu({Key? key}) : super(key: key);
+
+  @override
+  _OptionMenuState createState() => _OptionMenuState();
+}
+
+class _OptionMenuState extends State<OptionMenu> {
+  Options? _selection;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton(
+      onSelected: (Options result) {
+        switch (result) {
+          case Options.ip:
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(Device.getIP()),
+            ));
+            break;
+        }
+        // setState(() {
+        //   // _selection = result;
+        // });
+      },
+      offset: Offset.fromDirection(1, 55),
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<Options>>[
+        const PopupMenuItem<Options>(
+          value: Options.ip,
+          child: Text('IP'),
+        ),
+      ],
     );
   }
 }

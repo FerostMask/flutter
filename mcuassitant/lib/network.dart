@@ -18,7 +18,7 @@ class Device {
   String receivePort; // 接收端口
   String sendPort; // 发送端口
 
-  String? wifiIPv4;
+  static String? wifiIPv4;
 
   late UDP receiver;
   // 关闭UDP接收实例
@@ -63,7 +63,7 @@ class Device {
   // }
 
   //? 获取本机IP
-  Future<void> _getLocalIP() async {
+  static Future<void> getLocalIP() async {
     final NetworkInfo _networkInfo = NetworkInfo();
     try {
       // 异步执行，获得值后返回
@@ -74,7 +74,8 @@ class Device {
     }
   }
 
-  String getIP() {
-    return wifiIPv4 != null ? wifiIPv4.toString() : "...";
+  static String getIP() {
+    getLocalIP();
+    return wifiIPv4 ?? '...';
   }
 }
