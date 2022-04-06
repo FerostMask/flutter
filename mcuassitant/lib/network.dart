@@ -62,6 +62,38 @@ class Device {
   //   });
   // }
 
+  //? 数据发送
+  void send({required String message}) async {
+    final int port = int.parse(sendPort);
+    // UDP发送数据
+    var sender = await UDP.bind(Endpoint.any(port: Port(port)));
+    await sender.send(
+        message.codeUnits,
+        Endpoint.unicast(
+          InternetAddress("192.168.31.89"),
+          port: Port(port),
+        ));
+    sender.close();
+  }
+
+  //? 广播信息
+  void broadcastSend({required String message}) async {
+    final int port = int.parse(sendPort);
+    // UDP发送数据
+    if (wifiIPv4 == null) return;
+    List<String> originIP = wifiIPv4!.split('.');
+    originIP[3] = '255';
+    String broadcastIP = originIP.join('.');
+    var sender = await UDP.bind(Endpoint.any(port: Port(port)));
+    await sender.send(
+        message.codeUnits,
+        Endpoint.unicast(
+          InternetAddress(broadcastIP),
+          port: Port(port),
+        ));
+    sender.close();
+  }
+
   //? 获取本机IP
   static Future<void> getLocalIP() async {
     final NetworkInfo _networkInfo = NetworkInfo();

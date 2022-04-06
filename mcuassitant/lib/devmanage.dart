@@ -276,9 +276,9 @@ class _DeviceBoxState extends State<DeviceBox> {
     var rawData = value.split(",");
     // print(rawData);
     if (rawData[0] == 'IP') {
-      devices[widget.index]!
-          .deviceMap
-          .addAll(<String, String>{rawData[1]: rawData[2]});
+      devices[widget.index]!.deviceMap.addAll(<String, List<Object>>{
+        rawData[1]: [rawData[2], true]
+      });
       // print(devices[widget.index]!.deviceMap);
     }
   }
@@ -328,7 +328,10 @@ class _DeviceBoxState extends State<DeviceBox> {
   }
 
 //? 刷新按钮处理
-  void _handleRefresh() {}
+  void _handleRefresh() {
+    devices[widget.index]!.broadcastSend(message: 'Hello');
+  }
+
 //? 处理输入框保存内容
   void _handleRcvSaved(String? value) {
     _rcvPort = value;
@@ -374,6 +377,10 @@ class _DeviceBoxState extends State<DeviceBox> {
               text: _alterAssert ? 'Update' : 'Refresh',
               color: _alterAssert ? Colors.blue : Colors.grey,
               onChanged: _alterAssert ? _handleUpdate : _handleRefresh,
+            ),
+            StackButton(
+              onChanged: null,
+              text: 'Connect',
             ),
           ],
         ),
@@ -519,6 +526,61 @@ class _ChangeButtonState extends State<ChangeButton> {
             fontSize: widget.fontSize ?? 20,
             color: widget.color ?? Colors.blue,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class StackButton extends StatefulWidget {
+  //? 填充颜色的按钮
+  const StackButton({
+    Key? key,
+    this.onChanged,
+    this.padding,
+    this.fillColor,
+    required this.text,
+    this.textStyle,
+  }) : super(key: key);
+
+  final Function()? onChanged;
+  final Color? fillColor;
+  final EdgeInsets? padding;
+  final String text;
+  final TextStyle? textStyle;
+
+  @override
+  _StackButtonState createState() => _StackButtonState();
+}
+
+class _StackButtonState extends State<StackButton> {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: widget.padding ?? const EdgeInsets.only(top: 10, bottom: 10),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: Stack(
+          children: <Widget>[
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: widget.fillColor ?? Colors.blue,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: widget.onChanged,
+              child: Text(
+                widget.text,
+                style: widget.textStyle ??
+                    const TextStyle(
+                      fontSize: 20,
+                      color: Colors.white,
+                    ),
+              ),
+            ),
+          ],
         ),
       ),
     );
