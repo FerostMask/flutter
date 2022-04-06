@@ -28,6 +28,7 @@ class _DevManagePageState extends State<DevManagePage> {
 
   @override
   Widget build(BuildContext context) {
+    Device.getLocalIP(); // 获取本机IP
     return Scaffold(
       appBar: AppBar(
         title: const Text("Device Manage"),
@@ -274,11 +275,10 @@ class _DeviceBoxState extends State<DeviceBox> {
 //? 传输内容分析函数
   void _parsing(String value) {
     var rawData = value.split(",");
-    // print(rawData);
     if (rawData[0] == 'IP') {
-      devices[widget.index]!.deviceMap.addAll(<String, List<Object>>{
-        rawData[1]: [rawData[2], true]
-      });
+      devices[widget.index]!
+          .deviceMap
+          .addAll(<String, String>{rawData[1]: rawData[2]});
       // print(devices[widget.index]!.deviceMap);
     }
   }
@@ -316,6 +316,7 @@ class _DeviceBoxState extends State<DeviceBox> {
     }
     // 判断是否恢复断言 | 无法判断某框为空的情况
     if (_sendPort != null && _rcvPort != null) {
+      // 判空
       if (_sendPort!.isNotEmpty && _rcvPort!.isNotEmpty) {
         if (_sendPort == devices[widget.index]!.sendPort) {
           if (_rcvPort == devices[widget.index]!.receivePort) {
@@ -331,6 +332,20 @@ class _DeviceBoxState extends State<DeviceBox> {
   void _handleRefresh() {
     devices[widget.index]!.broadcastSend(message: 'Hello');
   }
+
+  void _handleConnect() {
+    Device.getIP();
+    devices[widget.index]!.bindDevice();
+    devices[widget.index]!.receiveWithParsing((String value) {
+      if (value == 'BIND') {
+        setState(() {
+          devices[widget.index]!.bind = true;
+        });
+      }
+    });
+  }
+
+  void _handleDisconnect() {}
 
 //? 处理输入框保存内容
   void _handleRcvSaved(String? value) {
@@ -379,8 +394,13 @@ class _DeviceBoxState extends State<DeviceBox> {
               onChanged: _alterAssert ? _handleUpdate : _handleRefresh,
             ),
             StackButton(
-              onChanged: null,
-              text: 'Connect',
+              onChanged: devices[widget.index]!.bind
+                  ? _handleDisconnect
+                  : _handleConnect,
+              text: devices[widget.index]!.bind ? 'Disconnect' : 'Connect',
+              fillColor: devices[widget.index]!.bind
+                  ? Colors.redAccent
+                  : Colors.green[300],
             ),
           ],
         ),

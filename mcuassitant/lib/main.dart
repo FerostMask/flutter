@@ -3,7 +3,6 @@ import 'package:mcuassitant/devmanage.dart';
 import 'package:mcuassitant/network.dart';
 
 void main() {
-  Device.getLocalIP(); // 获取本机IP
   runApp(const MyApp());
 }
 
