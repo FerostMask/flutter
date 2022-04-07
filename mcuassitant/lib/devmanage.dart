@@ -60,7 +60,7 @@ class OptionMenu extends StatefulWidget {
 }
 
 class _OptionMenuState extends State<OptionMenu> {
-  Options? _selection;
+  // Options? _selection;
 
   @override
   Widget build(BuildContext context) {
@@ -260,6 +260,8 @@ class _DeviceBoxState extends State<DeviceBox> {
     if (newValue != null && newValue.isNotEmpty) {
       if (newValue != oriValue) {
         _alterAssertTemp = true;
+      } else {
+        _alterAssertTemp = false;
       }
     } else {
       _alterAssertTemp = false;
@@ -336,7 +338,7 @@ class _DeviceBoxState extends State<DeviceBox> {
   void _handleConnect() {
     Device.getIP();
     devices[widget.index]!.bindDevice();
-    devices[widget.index]!.receiveWithParsing((String value) {
+    devices[widget.index]!.updateParsing((String value) {
       if (value == 'BIND') {
         setState(() {
           devices[widget.index]!.bind = true;

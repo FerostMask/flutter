@@ -18,6 +18,8 @@ class Device {
   String receivePort; // 接收端口
   String sendPort; // 发送端口
 
+  Function(String)? _parsing;
+
   static String? wifiIPv4;
 
   late UDP receiver;
@@ -28,6 +30,7 @@ class Device {
 
   //? 接收并处理数据函数
   void receiveWithParsing(Function(String) parsing) async {
+    _parsing = parsing;
     final int port = int.parse(receivePort);
     String? rcvContent;
     receiver = await UDP.bind(Endpoint.any(port: Port(port))); // 创建接收实例
@@ -38,10 +41,14 @@ class Device {
         rcvContent = String.fromCharCodes(datagram.data);
         if (rcvContent != null && rcvContent!.isNotEmpty) {
           print(rcvContent);
-          parsing(rcvContent!);
+          _parsing!(rcvContent!);
         }
       }
     });
+  }
+
+  void updateParsing(Function(String) parsing) {
+    _parsing = parsing;
   }
 
   //? 标准UDP接收初始化
