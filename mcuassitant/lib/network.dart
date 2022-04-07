@@ -10,10 +10,12 @@ List<Device?> devices = [];
 //?=========================
 class Device {
   Device({required this.receivePort, required this.sendPort});
+  static String defaultSelectDeivce = 'No Device Select';
 
   bool bind = false; // 设备绑定
-  Map<String, String> deviceMap = {'No Device Select': ''}; // 设备表
+  Map<String, String> deviceMap = {defaultSelectDeivce: ''}; // 设备表
   String? selectDeivce;
+  String? destinationIP;
 
   String receivePort; // 接收端口
   String sendPort; // 发送端口
@@ -70,14 +72,14 @@ class Device {
   // }
 
   //? 数据发送
-  void send({required String message, String? ip}) async {
+  void send({required String message}) async {
     final int port = int.parse(sendPort);
     // UDP发送数据
     var sender = await UDP.bind(Endpoint.any(port: Port(port)));
     await sender.send(
         message.codeUnits,
         Endpoint.unicast(
-          InternetAddress(ip ?? "127.0.0.1"),
+          InternetAddress(destinationIP ?? "127.0.0.1"),
           port: Port(port),
         ));
     sender.close();
@@ -86,7 +88,7 @@ class Device {
   //? 设备绑定
   void bindDevice() async {
     if (wifiIPv4 == null) return;
-    if (selectDeivce == null || selectDeivce == 'No Device Select') return;
+    if (selectDeivce == null || selectDeivce == defaultSelectDeivce) return;
     final int port = int.parse(sendPort);
     String message = 'BIND,' + wifiIPv4!;
     var sender = await UDP.bind(Endpoint.any(port: Port(port)));

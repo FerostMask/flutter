@@ -254,6 +254,8 @@ class _DeviceBoxState extends State<DeviceBox> {
 
   bool _alterAssert = false;
   bool _alterAssertTemp = false;
+
+  String? connectDevice;
   //! 变换断言函数，决定是否更新端口
   void assertAlter(String oriValue, String? newValue) {
     // 比较新旧值是否相同
@@ -337,17 +339,34 @@ class _DeviceBoxState extends State<DeviceBox> {
 
   void _handleConnect() {
     Device.getIP();
+    // 这边会有一个BUG，如果在连接上之前在选择了其他可选设备并点击连接，那前一个连接请求成功会使当前选择的设备进入连接状态
+    if (devices[widget.index]!.selectDeivce != Device.defaultSelectDeivce) {
+      connectDevice = devices[widget.index]!.selectDeivce;
+    }
     devices[widget.index]!.bindDevice();
     devices[widget.index]!.updateParsing((String value) {
       if (value == 'BIND') {
         setState(() {
           devices[widget.index]!.bind = true;
+          devices[widget.index]!.destinationIP =
+              devices[widget.index]!.deviceMap[connectDevice]; // 保存目标设备IP
         });
       }
     });
   }
 
-  void _handleDisconnect() {}
+  void _handleDisconnect() {
+    devices[widget.index]!.send(message: 'UNBIND,');
+    devices[widget.index]!.receiveWithParsing((String value) {
+      // 这里重新创建UDP接收实例，防止实例自动关闭接收不到数据
+      if (value == 'UNBIND') {
+        setState(() {
+          devices[widget.index]!.bind = false;
+          devices[widget.index]!.destinationIP = null; // 清除目标设备IP
+        });
+      }
+    });
+  }
 
 //? 处理输入框保存内容
   void _handleRcvSaved(String? value) {
