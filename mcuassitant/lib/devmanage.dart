@@ -310,7 +310,7 @@ class _DeviceBoxState extends State<DeviceBox> {
           _alterAssertTemp = false;
         }
         //? 关闭之前的UDP接收实例
-        devices[widget.index]!.close();
+        // devices[widget.index]!.close();
         setState(() {
           // 变更接收口
           devices[widget.index]!.receivePort = _rcvPort!;
@@ -334,17 +334,19 @@ class _DeviceBoxState extends State<DeviceBox> {
 
 //? 刷新按钮处理
   void _handleRefresh() {
-    devices[widget.index]!.broadcastSend(message: 'Hello');
+    // devices[widget.index]!.broadcastSend(message: 'Hello');
+    devices[widget.index]!.close();
   }
 
   void _handleConnect() {
     Device.getIP();
     // 这边会有一个BUG，如果在连接上之前在选择了其他可选设备并点击连接，那前一个连接请求成功会使当前选择的设备进入连接状态
     if (devices[widget.index]!.selectDeivce != Device.defaultSelectDeivce) {
+      // 判断是否选择的是默认设备
       connectDevice = devices[widget.index]!.selectDeivce;
     }
     devices[widget.index]!.bindDevice();
-    devices[widget.index]!.updateParsing((String value) {
+    devices[widget.index]!.receiveWithParsing((String value) {
       if (value == 'BIND') {
         setState(() {
           devices[widget.index]!.bind = true;
@@ -428,6 +430,12 @@ class _DeviceBoxState extends State<DeviceBox> {
       ],
     );
   }
+
+  // @override
+  // void dipose() {
+  //   super.dispose();
+  //   devices[widget.index]!.close();
+  // }
 }
 
 class OptionalDevice extends StatefulWidget {

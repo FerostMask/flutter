@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mcuassitant/devmanage.dart';
+import 'package:mcuassitant/scope.dart';
 import 'package:mcuassitant/network.dart';
 
 void main() {
@@ -19,6 +20,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/home',
       routes: {
         '/home': (context) => HomePage(title: 'HomePage'),
+        '/scope': (context) => ScopePage(title: 'Scope'),
         '/manage': (context) => const DevManagePage(),
       },
       navigatorObservers: [routeObserver],
