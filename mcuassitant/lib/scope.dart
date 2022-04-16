@@ -3,7 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:mcuassitant/network.dart';
-// import 'dart:math' as math;
+import 'dart:math' as math;
 
 List<List<String>> scopes = [];
 
@@ -48,19 +48,20 @@ class _ScopePageState extends State<ScopePage> {
 class Line {
   Line({
     required this.sourceValue,
-    this.color,
-    this.opacity,
-    this.range,
+    this.colors,
+    this.stops,
     this.width,
   }) {
-    // List<String> info = sourceValue.split(':');
-    // deviceIndex = int.parse(info[0]);
-    // name = info[1];
+    List<String> info = sourceValue.split(':');
+    deviceIndex = int.parse(info[0]);
+    name = info[1];
   }
-  final points = <FlSpot>[];
-  Color? color = Colors.lightBlueAccent[700];
-  double? opacity = 0.1;
-  double? range = 1.0;
+  var points = <FlSpot>[const FlSpot(0, 0)];
+  List<Color>? colors = [
+    Colors.lightBlueAccent[700]!.withOpacity(0),
+    Colors.lightBlueAccent[700]!,
+  ];
+  List<double>? stops = [0.1, 1.0];
   double? width = 4;
 
   late int deviceIndex;
@@ -68,8 +69,15 @@ class Line {
 
   String sourceValue;
 
-  void addPoint(double xValue) {
-    points.add(FlSpot(xValue, devices[deviceIndex]!.scopeData[name]!));
+  double? addPoint(double xValue) {
+    // 要保证键值对存在才调用此函数
+    if (devices[deviceIndex] != null &&
+        devices[deviceIndex]!.scopeData[name] != null) {
+      devices[deviceIndex]!.scopeData[name] = 2 * math.sin(xValue);
+      points.add(FlSpot(xValue, devices[deviceIndex]!.scopeData[name]!));
+      return devices[deviceIndex]!.scopeData[name]!;
+    }
+    return null;
   }
 }
 
@@ -86,12 +94,13 @@ class _ScopeState extends State<Scope> {
   final limitCount = 100; // 最多显示的点数
   double xValue = 0;
   double step = 0.1; // 步长
-  var maximum = SplayTreeMap<double, int>((a, b) => a.compareTo(b));
+  double lineWidth = 4; // 线宽
+  var extremum = SplayTreeMap<int, int>((a, b) => a.compareTo(b));
 
   late Timer timer;
 
-  List<Line> lines = [Line(sourceValue: '0:test')];
-  List<LineChartBarData>? data;
+  List<Line> lines = [];
+  List<LineChartBarData> data = [];
 
   @override
   void initState() {
@@ -103,26 +112,46 @@ class _ScopeState extends State<Scope> {
       // 添加线
       lines.add(Line(sourceValue: scopes[widget.index][i]));
       // 添加线Widget
-      data!.add(LineChartBarData(
+      data.add(LineChartBarData(
         spots: lines[i].points,
         dotData: FlDotData(show: false),
-        colors: [lines[i].color!.withOpacity(0), lines[i].color!],
-        colorStops: [lines[i].opacity!, lines[i].range!],
-        barWidth: lines[i].width!,
+        colors: lines[i].colors,
+        colorStops: lines[i].stops,
+        barWidth: lineWidth,
         isCurved: false,
       ));
     }
-    timer = Timer.periodic(const Duration(milliseconds: 40), (timer) {
+    timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       for (int i = 0; i < lines.length; i++) {
         // 出列超出范围的点
         while (lines[i].points.length > limitCount) {
+          String lastPoint = lines[i].points.last.toString();
+          lastPoint = lastPoint.substring(2, lastPoint.length - 1);
+          List lastValue = lastPoint.split(',');
+          int deleteValue = double.parse(lastValue[1]).toInt();
+          // 利用有序哈希处理上下界
+          if (extremum[deleteValue] != 1) {
+            extremum[deleteValue.toInt()] = extremum[deleteValue]! - 1;
+          } else {
+            extremum.remove(deleteValue);
+          }
           lines[i].points.removeAt(0);
         }
       }
       // 添加点、处理上下限、绘制点
       setState(() {
         for (int i = 0; i < lines.length; i++) {
-          lines[i].addPoint(xValue);
+          double? returnValue = lines[i].addPoint(xValue);
+          int addValue = 0;
+          // 利用有序哈希处理上下界
+          if (returnValue != null) {
+            addValue = returnValue.toInt();
+            if (extremum[addValue] != null) {
+              extremum[addValue] = extremum[addValue]! + 1;
+            } else {
+              extremum.addAll({addValue: 1});
+            }
+          }
         }
       });
       xValue += step; // 换步
@@ -151,10 +180,14 @@ class _ScopeState extends State<Scope> {
                 child: lines.isNotEmpty
                     ? LineChart(
                         LineChartData(
-                            minY: -2,
-                            maxY: 2,
+                            minY: extremum.firstKey() == null
+                                ? -1
+                                : extremum.firstKey()! - 2,
+                            maxY: extremum.lastKey() == null
+                                ? 1
+                                : extremum.lastKey()!.toDouble() + 2,
                             minX: lines[0].points.first.x,
-                            maxX: lines[0].points.last.x,
+                            // maxX: lines[0].points.last.x,
                             lineTouchData: LineTouchData(enabled: false),
                             clipData: FlClipData.all(),
                             gridData: FlGridData(
