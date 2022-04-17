@@ -14,7 +14,7 @@ class Device {
 
   bool bind = false; // 设备绑定
   Map<String, String> deviceMap = {defaultSelectDeivce: ''}; // 设备表
-  Map<String, double> scopeData = {'Test': 1};
+  Map<String, double> scopeData = {};
   String? selectDeivce;
   String? destinationIP;
 

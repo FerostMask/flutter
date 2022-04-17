@@ -19,7 +19,7 @@ class ScopePage extends StatefulWidget {
 class _ScopePageState extends State<ScopePage> {
   void _handleButton() {
     setState(() {
-      scopes.add(['0:Test']);
+      scopes.add([]);
     });
   }
 
