@@ -14,6 +14,7 @@ class Device {
 
   bool bind = false; // 设备绑定
   Map<String, String> deviceMap = {defaultSelectDeivce: ''}; // 设备表
+  Map<String, double> scopeData = {};
   String? selectDeivce;
   String? destinationIP;
 
@@ -24,10 +25,16 @@ class Device {
 
   static String? wifiIPv4;
 
-  late UDP receiver;
+  List<UDP> receivers = [];
+
+  // late UDP receiver;
   // 关闭UDP接收实例
   void close() {
-    receiver.close();
+    for (int i = 0; i < receivers.length; i++) {
+      receivers[i].close();
+    }
+    receivers.clear();
+    // receiver.close();
   }
 
   //? 接收并处理数据函数
@@ -35,9 +42,12 @@ class Device {
     _parsing = parsing;
     final int port = int.parse(receivePort);
     String? rcvContent;
-    receiver = await UDP.bind(Endpoint.any(port: Port(port))); // 创建接收实例
+    var receiver = await UDP.bind(Endpoint.any(port: Port(port))); // 创建接收实例
+    receivers.add(receiver);
     // 监听端口
-    receiver.asStream(timeout: const Duration(seconds: 10)).listen((datagram) {
+    receivers[receivers.length - 1]
+        .asStream(timeout: const Duration(seconds: 60))
+        .listen((datagram) {
       // 接收并处理数据
       if (datagram != null) {
         rcvContent = String.fromCharCodes(datagram.data);
