@@ -7,6 +7,9 @@ import 'dart:math' as math;
 
 List<List<String>> scopes = [];
 
+//?-------------------------
+//?               示波器页面
+//?=========================
 class ScopePage extends StatefulWidget {
   const ScopePage({Key? key, required this.title}) : super(key: key);
 
@@ -23,6 +26,7 @@ class _ScopePageState extends State<ScopePage> {
     });
   }
 
+  @override
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,6 +49,9 @@ class _ScopePageState extends State<ScopePage> {
   }
 }
 
+//?-------------------------
+//?         线类 | 描述线属性
+//?=========================
 class Line {
   Line({
     required this.sourceValue,
@@ -81,6 +88,9 @@ class Line {
   }
 }
 
+//?-------------------------
+//?               示波器模块
+//?=========================
 class Scope extends StatefulWidget {
   const Scope({Key? key, required this.index}) : super(key: key);
 

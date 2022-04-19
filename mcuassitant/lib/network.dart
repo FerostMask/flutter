@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:io';
 import 'package:udp/udp.dart';
 import 'package:flutter/services.dart';
@@ -9,12 +10,15 @@ List<Device?> devices = [];
 //?                   设备类
 //?=========================
 class Device {
-  Device({required this.receivePort, required this.sendPort});
+  Device({required this.receivePort, required this.sendPort}) {
+    permanentParsing.add(_handleScopeList);
+    permanentParsing.add(_handleScopeValue);
+  }
   static String defaultSelectDeivce = 'No Device Select';
 
   bool bind = false; // 设备绑定
   Map<String, String> deviceMap = {defaultSelectDeivce: ''}; // 设备表
-  Map<String, double> scopeData = {};
+  Map<String, double> scopeData = HashMap(); // 示波器数据表
   String? selectDeivce;
   String? destinationIP;
 
@@ -25,16 +29,36 @@ class Device {
 
   static String? wifiIPv4;
 
+  List<Function(List)?> permanentParsing = []; // 常驻分析函数
+
   List<UDP> receivers = [];
 
-  // late UDP receiver;
+  void _handleScopeList(List values) {
+    if (values[0] == 'SCOPELIST') {
+      for (int i = 1; i < values.length; i++) {
+        if (scopeData.containsKey(values[i]) == false) {
+          scopeData.addAll({values[i]: 0}); // 没有对应键值，添加键值对
+        }
+      }
+    }
+  }
+
+  void _handleScopeValue(List values) {
+    if (values[0] == 'SCOPEVALUE') {
+      int i = 1;
+      scopeData.forEach((key, value) {
+        scopeData[key] = double.parse(values[i]);
+        i++;
+      });
+    }
+  }
+
   // 关闭UDP接收实例
   void close() {
     for (int i = 0; i < receivers.length; i++) {
       receivers[i].close();
     }
     receivers.clear();
-    // receiver.close();
   }
 
   //? 接收并处理数据函数
@@ -54,6 +78,12 @@ class Device {
         if (rcvContent != null && rcvContent!.isNotEmpty) {
           print(rcvContent);
           _parsing!(rcvContent!);
+          // 执行常驻分析
+          if (permanentParsing.isNotEmpty) {
+            for (int i = 0; i < permanentParsing.length; i++) {
+              permanentParsing[i]!(rcvContent!.split(','));
+            }
+          }
         }
       }
     });
