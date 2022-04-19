@@ -111,7 +111,39 @@ class _ScopeState extends State<Scope> {
 
   List<Line> lines = [];
   List<LineChartBarData> data = [];
+  List<Map<String, bool>> showValue = [];
 
+//? 按键处理函数
+  void _handleManage() {
+    // 构建选项列表
+    int i = 0;
+    for (var element in devices) {
+      if (element == null) return;
+      if (showValue.length < devices.length) {
+        showValue.add(HashMap()); // 给每一个设备留一项列表
+      }
+      for (var key in element.scopeData.keys) {
+        // 添加新的选项
+        if (showValue[i][key] == null) {
+          showValue[i].addAll({key: false});
+        }
+      }
+      if (scopes.isNotEmpty) {
+        // 重新勾选上之前选过的选项
+        if (scopes[i].isNotEmpty) {
+          for (var name in scopes[i]) {
+            if (showValue[i][name] != null) {
+              showValue[i][name] = true;
+            }
+          }
+        }
+      }
+    }
+    print(showValue);
+    // 生成Dialog
+  }
+
+//? 初始化Widget
   @override
   void initState() {
     super.initState();
@@ -168,52 +200,59 @@ class _ScopeState extends State<Scope> {
     });
   }
 
+//?-------------------------
+//?                   示波器
+//?=========================
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: GestureDetector(
-        onLongPress: null,
-        child: Container(
-          height: 400.0,
-          padding: const EdgeInsets.all(4.0),
-          margin: const EdgeInsets.symmetric(horizontal: 8.0),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10.0),
-            color: Colors.white,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              SizedBox(
-                width: 600,
-                height: 300,
-                child: lines.isNotEmpty
-                    ? LineChart(
-                        LineChartData(
-                            minY: extremum.firstKey() == null
-                                ? -1
-                                : extremum.firstKey()! - 2,
-                            maxY: extremum.lastKey() == null
-                                ? 1
-                                : extremum.lastKey()!.toDouble() + 2,
-                            minX: lines[0].points.first.x,
-                            // maxX: lines[0].points.last.x,
-                            lineTouchData: LineTouchData(enabled: false),
-                            clipData: FlClipData.all(),
-                            gridData: FlGridData(
-                              show: true,
-                              drawVerticalLine: false,
-                            ),
-                            lineBarsData: data,
-                            titlesData: FlTitlesData(
-                              show: true,
-                              bottomTitles: SideTitles(showTitles: false),
-                            )),
-                      )
-                    : Container(),
+      child: Container(
+        height: 400.0,
+        padding: const EdgeInsets.all(4.0),
+        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10.0),
+          color: Colors.white,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(top: 10, left: 550),
+              child: PopupMenu(
+                handleManage: _handleManage,
               ),
-            ],
-          ),
+            ),
+            SizedBox(
+              width: 600,
+              height: 300,
+              child: lines.isNotEmpty
+                  ? LineChart(
+                      LineChartData(
+                          minY: extremum.firstKey() == null
+                              ? -1
+                              : extremum.firstKey()! - 2,
+                          maxY: extremum.lastKey() == null
+                              ? 1
+                              : extremum.lastKey()!.toDouble() + 2,
+                          minX: lines[0].points.first.x,
+                          // maxX: lines[0].points.last.x,
+                          lineTouchData: LineTouchData(enabled: false),
+                          clipData: FlClipData.all(),
+                          gridData: FlGridData(
+                            show: true,
+                            drawVerticalLine: false,
+                          ),
+                          lineBarsData: data,
+                          titlesData: FlTitlesData(
+                            show: true,
+                            bottomTitles: SideTitles(showTitles: false),
+                          )),
+                    )
+                  : Container(),
+            ),
+          ],
         ),
       ),
     );
@@ -223,5 +262,69 @@ class _ScopeState extends State<Scope> {
   void dispose() {
     timer.cancel();
     super.dispose();
+  }
+}
+
+//?-------------------------
+//?            示波器下拉菜单
+//?=========================
+enum Options { manage }
+
+class PopupMenu extends StatefulWidget {
+  PopupMenu({Key? key, required this.handleManage}) : super(key: key);
+
+  Function handleManage;
+
+  @override
+  State<PopupMenu> createState() => _PopupMenuState();
+}
+
+class _PopupMenuState extends State<PopupMenu> {
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<Options>(
+      onSelected: (Options result) {
+        switch (result) {
+          case Options.manage:
+            widget.handleManage();
+            break;
+        }
+      },
+      icon: const Icon(Icons.more_vert),
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<Options>>[
+        const PopupMenuItem<Options>(
+          value: Options.manage,
+          child: ListTile(
+            leading: Icon(Icons.rule),
+            title: Text('Data Manage'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+//?-------------------------
+//?          Dialog | 选项栏
+//?=========================
+class DataSelect extends StatefulWidget {
+  DataSelect({
+    Key? key,
+    this.title,
+  }) : super(key: key);
+
+  String? title;
+
+  @override
+  State<DataSelect> createState() => _DataSelectState();
+}
+
+class _DataSelectState extends State<DataSelect> {
+  @override
+  Widget build(BuildContext context) {
+    return SimpleDialog(
+      title: Text(widget.title ?? "Data Select"),
+      children: const <Widget>[],
+    );
   }
 }
