@@ -12,12 +12,67 @@ class ScopeBox {
   // 构造函数
   ScopeBox();
 
-  double xValue = 0;
+  double xValue = 0; // x坐标值
   var extremum = SplayTreeMap<int, int>((a, b) => a.compareTo(b));
-  // List<Map<int, String>> showData = []; // 显示的数据
-  // Line(deviceIndex: 0, dataName: 'test') // 测试用例
   List<Line> lines = []; // 显示的数据 | 线的形式
+  List<Map<String, bool>> options = [HashMap()];
+
+//? 添加line | ✔打勾时调用
+  void addLine(int deviceIndex, String dataName) {
+    lines.add(Line(
+      deviceIndex: deviceIndex,
+      dataName: dataName,
+    ));
+  }
+
+//? 删除line | 取消打勾时调用
+  void deleteLine(int deviceIndex, String dataName) {
+    for (int i = 0; i < lines.length; i++) {
+      if (lines[i].dataName == dataName) {
+        if (lines[i].deviceIndex == deviceIndex) {
+          lines.removeAt(i);
+          if (lines.isEmpty) {
+            // 线全删完后把xValue置零
+            xValue = 0;
+          }
+          return;
+        }
+      }
+    }
+  }
+
+//? 更新options
+  void updateOptions() {
+    for (int i = 0; i < dataNameList.length; i++) {
+      //! 这边可能会有BUG，options[i]不存在的情况会出现访问null
+      if (options.length < i + 1) {
+        options.add(HashMap());
+      }
+      for (var dataName in dataNameList[i]) {
+        if (options[i][dataName] == null) {
+          options[i].addAll({dataName: false});
+        }
+      }
+    }
+    // for (var devs in dataNameList) {
+    //   for (var dataName in devs) {
+    //     if (options[dataName] == null) {
+    //       options.addAll({dataName: false});
+    //     }
+    //   }
+    // }
+  }
+
   static List<List<String>> dataNameList = [];
+
+//? 构造选项列表函数
+  static buildDataNameList() {
+    dataNameList.clear();
+    for (var device in devices) {
+      dataNameList.add([]);
+      dataNameList.last = device!.scopeData.keys.toList();
+    }
+  }
 }
 
 //?-------------------------
@@ -200,12 +255,17 @@ class _ScopeState extends State<Scope> {
 //? 按键处理函数
   void _handleManage() async {
     // 生成Dialog
-    // await showDialog(
-    //   context: context,
-    //   builder: (BuildContext context) {
-    //     return DataSelect();
-    //   },
-    // );
+    ScopeBox.buildDataNameList();
+    scopes[widget.index].updateOptions();
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return OptionSelect(
+          index: widget.index,
+          updateLines: generateLines,
+        );
+      },
+    );
   }
 
 //?-------------------------
@@ -310,10 +370,170 @@ class _PopupMenuState extends State<PopupMenu> {
           value: Options.management,
           child: ListTile(
             leading: Icon(Icons.rule),
-            title: Text('Data Management'),
+            title: Text('Data Manage'),
           ),
         ),
       ],
+    );
+  }
+}
+
+//?-------------------------
+//?          Dialog | 选项栏
+//?=========================
+class PanelItem {
+  PanelItem({
+    required this.headerValue,
+    required this.deviceIndex,
+    this.isExpanded = false,
+  });
+
+  // String expandedValue;
+  String headerValue; // 标题
+  int deviceIndex; // 当前面板对应设备序号
+  bool isExpanded; // 是否展开
+}
+
+List<PanelItem> generatePanelItems(int numberOfItems) {
+  return List<PanelItem>.generate(numberOfItems, (index) {
+    return PanelItem(
+      headerValue: devices[index]!.selectDeivce ?? "UNBOUND",
+      deviceIndex: index,
+      isExpanded: devices[index]!.selectDeivce == null ? false : true,
+    );
+  });
+}
+
+//? 面板Widget
+class OptionSelect extends StatefulWidget {
+  const OptionSelect({
+    Key? key,
+    required this.index,
+    this.title,
+    required this.updateLines,
+  }) : super(key: key);
+
+  final String? title;
+  final int index;
+  final Function updateLines;
+
+  @override
+  State<OptionSelect> createState() => _OptionSelectState();
+}
+
+class _OptionSelectState extends State<OptionSelect> {
+  final List<PanelItem> _panelList = generatePanelItems(
+      ScopeBox.dataNameList.length); // dataNameList是根据devices数量创建的
+
+  @override
+  Widget build(BuildContext context) {
+    return SimpleDialog(
+      title: Text(widget.title ?? 'Data Select'),
+      children: <Widget>[_buildPanel()],
+    );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    widget.updateLines();
+  }
+
+  Widget _buildPanel() {
+    return ExpansionPanelList(
+      expansionCallback: (int index, bool isExpanded) {
+        // 展开面板
+        setState(() {
+          _panelList[index].isExpanded = !isExpanded;
+        });
+      },
+      children: _panelList.map<ExpansionPanel>((PanelItem item) {
+        return ExpansionPanel(
+          headerBuilder: (BuildContext context, bool isExpanded) {
+            return ListTile(
+              title: Text(item.headerValue),
+            );
+          },
+          body: Column(
+            children: _generateOptions(item.deviceIndex),
+          ),
+          isExpanded: item.isExpanded,
+        );
+      }).toList(),
+    );
+  }
+
+  List<Widget> _generateOptions(int deviceIndex) {
+    return List<Widget>.generate(ScopeBox.dataNameList[deviceIndex].length,
+        (int index) {
+      return SelectedBox(
+        dataName: ScopeBox.dataNameList[deviceIndex][index],
+        scopeIndex: widget.index,
+        deviceIndex: deviceIndex,
+      );
+    });
+  }
+}
+
+class SelectedBox extends StatefulWidget {
+  const SelectedBox({
+    Key? key,
+    required this.dataName,
+    required this.scopeIndex,
+    required this.deviceIndex,
+  }) : super(key: key);
+
+  final String dataName;
+  final int scopeIndex;
+  final int deviceIndex;
+
+  @override
+  State<SelectedBox> createState() => _SelectedBoxState();
+}
+
+class _SelectedBoxState extends State<SelectedBox> {
+  @override
+  Widget build(BuildContext context) {
+    Color getColor(Set<MaterialState> states) {
+      const Set<MaterialState> interactiveStates = <MaterialState>{
+        MaterialState.focused,
+        MaterialState.hovered,
+        MaterialState.pressed,
+        MaterialState.selected,
+      };
+      if (states.any(interactiveStates.contains)) {
+        return Colors.blue;
+      }
+      return Colors.grey;
+    }
+
+    return ListTile(
+      title: Text(widget.dataName),
+      trailing: Checkbox(
+        checkColor: Colors.white,
+        fillColor: MaterialStateProperty.resolveWith(getColor),
+        value: scopes[widget.scopeIndex].options[widget.deviceIndex]
+            [widget.dataName],
+        onChanged: (bool? isSelect) {
+          setState(() {
+            if (scopes[widget.scopeIndex].options[widget.deviceIndex]
+                    [widget.dataName] ==
+                true) {
+              // 取消打勾
+              scopes[widget.scopeIndex]
+                  .deleteLine(widget.deviceIndex, widget.dataName);
+            } else {
+              // 打勾
+              scopes[widget.scopeIndex]
+                  .addLine(widget.deviceIndex, widget.dataName);
+            }
+            scopes[widget.scopeIndex].options[widget.deviceIndex]
+                    [widget.dataName] =
+                !scopes[widget.scopeIndex].options[widget.deviceIndex]
+                    [widget.dataName]!;
+          });
+        },
+      ),
     );
   }
 }

@@ -13,7 +13,7 @@ class Device {
   Device({required this.receivePort, required this.sendPort}) {
     permanentParsing.add(_handleScopeList);
     permanentParsing.add(_handleScopeValue);
-    // scopeData.addAll({'test': 1});
+    scopeData.addAll({'test': 1});
   }
   static String defaultSelectDeivce = 'No Device Select';
 
