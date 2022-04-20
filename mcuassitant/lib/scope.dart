@@ -27,7 +27,6 @@ class _ScopePageState extends State<ScopePage> {
   }
 
   @override
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -107,40 +106,20 @@ class _ScopeState extends State<Scope> {
   double lineWidth = 4; // 线宽
   var extremum = SplayTreeMap<int, int>((a, b) => a.compareTo(b));
 
-  late Timer timer;
+  Timer? timer;
 
   List<Line> lines = [];
   List<LineChartBarData> data = [];
-  List<Map<String, bool>> showValue = [];
 
 //? 按键处理函数
-  void _handleManage() {
-    // 构建选项列表
-    int i = 0;
-    for (var element in devices) {
-      if (element == null) return;
-      if (showValue.length < devices.length) {
-        showValue.add(HashMap()); // 给每一个设备留一项列表
-      }
-      for (var key in element.scopeData.keys) {
-        // 添加新的选项
-        if (showValue[i][key] == null) {
-          showValue[i].addAll({key: false});
-        }
-      }
-      if (scopes.isNotEmpty) {
-        // 重新勾选上之前选过的选项
-        if (scopes[i].isNotEmpty) {
-          for (var name in scopes[i]) {
-            if (showValue[i][name] != null) {
-              showValue[i][name] = true;
-            }
-          }
-        }
-      }
-    }
-    print(showValue);
+  void _handleManage() async {
     // 生成Dialog
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return DataSelect();
+      },
+    );
   }
 
 //? 初始化Widget
@@ -227,30 +206,7 @@ class _ScopeState extends State<Scope> {
             SizedBox(
               width: 600,
               height: 300,
-              child: lines.isNotEmpty
-                  ? LineChart(
-                      LineChartData(
-                          minY: extremum.firstKey() == null
-                              ? -1
-                              : extremum.firstKey()! - 2,
-                          maxY: extremum.lastKey() == null
-                              ? 1
-                              : extremum.lastKey()!.toDouble() + 2,
-                          minX: lines[0].points.first.x,
-                          // maxX: lines[0].points.last.x,
-                          lineTouchData: LineTouchData(enabled: false),
-                          clipData: FlClipData.all(),
-                          gridData: FlGridData(
-                            show: true,
-                            drawVerticalLine: false,
-                          ),
-                          lineBarsData: data,
-                          titlesData: FlTitlesData(
-                            show: true,
-                            bottomTitles: SideTitles(showTitles: false),
-                          )),
-                    )
-                  : Container(),
+              child: lines.isNotEmpty ? _buildScope() : Container(),
             ),
           ],
         ),
@@ -258,9 +214,34 @@ class _ScopeState extends State<Scope> {
     );
   }
 
+  Widget _buildScope() {
+    return LineChart(
+      LineChartData(
+          minY: extremum.firstKey() == null ? -1 : extremum.firstKey()! - 2,
+          maxY: extremum.lastKey() == null
+              ? 1
+              : extremum.lastKey()!.toDouble() + 2,
+          minX: lines[0].points.first.x,
+          // maxX: lines[0].points.last.x,
+          lineTouchData: LineTouchData(enabled: false),
+          clipData: FlClipData.all(),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+          ),
+          lineBarsData: data,
+          titlesData: FlTitlesData(
+            show: true,
+            bottomTitles: SideTitles(showTitles: false),
+          )),
+    );
+  }
+
   @override
   void dispose() {
-    timer.cancel();
+    if (timer != null) {
+      timer!.cancel();
+    }
     super.dispose();
   }
 }
@@ -304,6 +285,29 @@ class _PopupMenuState extends State<PopupMenu> {
   }
 }
 
+class PanelItem {
+  PanelItem({
+    required this.headerValue,
+    required this.deviceIndex,
+    this.isExpanded = false,
+  });
+
+  // String expandedValue;
+  String headerValue; // 标题
+  int deviceIndex;
+  bool isExpanded; // 是否展开
+}
+
+List<PanelItem> generatePanelItems(int numberOfItems) {
+  return List<PanelItem>.generate(numberOfItems, (index) {
+    return PanelItem(
+      headerValue: devices[index]!.selectDeivce ?? "Unbound Device",
+      deviceIndex: index,
+      isExpanded: devices[index]!.selectDeivce == null ? false : true,
+    );
+  });
+}
+
 //?-------------------------
 //?          Dialog | 选项栏
 //?=========================
@@ -320,11 +324,137 @@ class DataSelect extends StatefulWidget {
 }
 
 class _DataSelectState extends State<DataSelect> {
+  List<Map<String, bool>> showValue = [];
+  List<List<String>> dataName = [];
+  final List<PanelItem> _deviceList = generatePanelItems(devices.length);
+
   @override
   Widget build(BuildContext context) {
+    _buildOptionList(); // 构造选项列表
     return SimpleDialog(
       title: Text(widget.title ?? "Data Select"),
-      children: const <Widget>[],
+      children: <Widget>[
+        _buildPanel(),
+      ],
+    );
+  }
+
+  void _buildOptionList() {
+    // 构建选项列表
+    int i = 0;
+    for (var element in devices) {
+      if (element == null) return;
+      if (showValue.length < devices.length) {
+        dataName.add([]); // 构造名称列表
+        showValue.add(HashMap()); // 给每一个设备留一项列表
+      }
+      for (var key in element.scopeData.keys) {
+        // 添加选项
+        showValue[i].addAll({key: false});
+      }
+      if (scopes.isNotEmpty) {
+        // 重新勾选上之前选过的选项
+        if (scopes[i].isNotEmpty) {
+          for (var name in scopes[i]) {
+            if (showValue[i][name] != null) {
+              showValue[i][name] = true;
+            }
+          }
+        }
+      }
+      dataName[i] = showValue[i].keys.toList();
+      i++;
+      print(dataName);
+    }
+  }
+
+//? 创建设备面板
+  Widget _buildPanel() {
+    return ExpansionPanelList(
+      expansionCallback: (int index, bool isExpanded) {
+        setState(() {
+          _deviceList[index].isExpanded = !isExpanded;
+        });
+      },
+      children: _deviceList.map<ExpansionPanel>((PanelItem item) {
+        return ExpansionPanel(
+          headerBuilder: (BuildContext context, bool isExpanded) {
+            return ListTile(
+              title: Text(item.headerValue),
+            );
+          },
+          body: Column(
+            children: _generateOptions(item.deviceIndex),
+          ),
+          isExpanded: item.isExpanded,
+        );
+      }).toList(),
+    );
+  }
+
+//? 创建选项列表
+  List<Widget> _generateOptions(int deviceIndex) {
+    devices[deviceIndex]!.scopeData.addAll({'Test': 0});
+    // print(showValue[index].length);
+    return List<Widget>.generate(showValue[deviceIndex].length, (int index) {
+      return SelectedBox(
+        dataName: dataName[deviceIndex][index],
+        isSelect: showValue[deviceIndex][dataName[deviceIndex][index]]!,
+        onChanged: () {
+          setState(() {
+            showValue[deviceIndex][dataName[deviceIndex][index]] =
+                !showValue[deviceIndex][dataName[deviceIndex][index]]!;
+          });
+        },
+      );
+    });
+  }
+}
+
+class SelectedBox extends StatefulWidget {
+  const SelectedBox(
+      {Key? key,
+      required this.dataName,
+      required this.isSelect,
+      this.onChanged})
+      : super(key: key);
+
+  final bool isSelect;
+  final String dataName;
+  final Function()? onChanged;
+
+  @override
+  State<SelectedBox> createState() => _SelectedBoxState();
+}
+
+class _SelectedBoxState extends State<SelectedBox> {
+  @override
+  Widget build(BuildContext context) {
+    Color getColor(Set<MaterialState> states) {
+      const Set<MaterialState> interactiveStates = <MaterialState>{
+        MaterialState.focused,
+        MaterialState.hovered,
+        MaterialState.pressed,
+      };
+      if (states.any(interactiveStates.contains)) {
+        return Colors.blue;
+      }
+      return Colors.grey;
+    }
+
+    return ListTile(
+      title: Text(widget.dataName),
+      trailing: Checkbox(
+        checkColor: Colors.white,
+        fillColor: MaterialStateProperty.resolveWith(getColor),
+        value: widget.isSelect,
+        onChanged: widget.onChanged == null
+            ? null
+            : (bool? isSelect) {
+                widget.onChanged!();
+                // print(widget.isSelect);
+              },
+      ),
     );
   }
 }
