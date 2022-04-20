@@ -12,9 +12,11 @@ class ScopeBox {
   // 构造函数
   ScopeBox();
 
+  double xValue = 0;
+  var extremum = SplayTreeMap<int, int>((a, b) => a.compareTo(b));
   // List<Map<int, String>> showData = []; // 显示的数据
-  List<Line> lines = [Line(deviceIndex: 0, dataName: 'test')]; // 显示的数据 | 线的形式
-
+  // Line(deviceIndex: 0, dataName: 'test') // 测试用例
+  List<Line> lines = []; // 显示的数据 | 线的形式
   static List<List<String>> dataNameList = [];
 }
 
@@ -35,7 +37,7 @@ class Line {
       Colors.lightBlueAccent[700]!.withOpacity(0),
       Colors.lightBlueAccent[700]!,
     ],
-    stops: [0.1, 1.0],
+    stops: [0.05, 1.0],
     width: 4,
   );
 
@@ -123,10 +125,8 @@ class Scope extends StatefulWidget {
 
 class _ScopeState extends State<Scope> {
   final limitCount = 100; // 最多显示的点数
-  double xValue = 0;
   double step = 0.1; // 步长
   double lineWidth = 4; // 线宽
-  var extremum = SplayTreeMap<int, int>((a, b) => a.compareTo(b));
 
   Timer? timer;
 
@@ -164,12 +164,13 @@ class _ScopeState extends State<Scope> {
           int deleteValue =
               double.parse(popPair[1]).toInt(); // 因为源数据是浮点型，所以先转浮点型
           // 利用有序哈希处理上下界
-          if (extremum[deleteValue]! > 1) {
+          if (scopes[widget.index].extremum[deleteValue]! > 1) {
             // 数量大于1，count--
-            extremum[deleteValue] = extremum[deleteValue]! - 1;
+            scopes[widget.index].extremum[deleteValue] =
+                scopes[widget.index].extremum[deleteValue]! - 1;
           } else {
             // 数量小于等于1，从Map中删除键值对
-            extremum.remove(deleteValue);
+            scopes[widget.index].extremum.remove(deleteValue);
           }
           line.points.removeAt(0);
         }
@@ -177,22 +178,34 @@ class _ScopeState extends State<Scope> {
       // 添加点、处理上下限、绘制点
       setState(() {
         for (var line in scopes[widget.index].lines) {
-          double? pushValue = line.addPoint(xValue);
+          double? pushValue = line.addPoint(scopes[widget.index].xValue);
           int addValue = 0;
           // 利用有序哈希处理上下界
           if (pushValue != null) {
             addValue = pushValue.toInt();
-            if (extremum[addValue] != null) {
+            if (scopes[widget.index].extremum[addValue] != null) {
               //count++
-              extremum[addValue] = extremum[addValue]! + 1;
+              scopes[widget.index].extremum[addValue] =
+                  scopes[widget.index].extremum[addValue]! + 1;
             } else {
-              extremum.addAll({addValue: 1});
+              scopes[widget.index].extremum.addAll({addValue: 1});
             }
           }
         }
       });
-      xValue += step; // 换步
+      scopes[widget.index].xValue += step; // 换步
     });
+  }
+
+//? 按键处理函数
+  void _handleManage() async {
+    // 生成Dialog
+    // await showDialog(
+    //   context: context,
+    //   builder: (BuildContext context) {
+    //     return DataSelect();
+    //   },
+    // );
   }
 
 //?-------------------------
@@ -213,11 +226,11 @@ class _ScopeState extends State<Scope> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            const Padding(
-              padding: EdgeInsets.only(top: 10, left: 550),
-              // child: PopupMenu(
-              //   handleManage: _handleManage,
-              // ),
+            Padding(
+              padding: const EdgeInsets.only(top: 10, left: 550),
+              child: PopupMenu(
+                handleManage: _handleManage,
+              ),
             ),
             SizedBox(
               width: 600,
@@ -235,10 +248,12 @@ class _ScopeState extends State<Scope> {
   Widget _buildScope() {
     return LineChart(
       LineChartData(
-          minY: extremum.firstKey() == null ? -1 : extremum.firstKey()! - 2,
-          maxY: extremum.lastKey() == null
+          minY: scopes[widget.index].extremum.firstKey() == null
+              ? -1
+              : scopes[widget.index].extremum.firstKey()! - 2,
+          maxY: scopes[widget.index].extremum.lastKey() == null
               ? 1
-              : extremum.lastKey()!.toDouble() + 2,
+              : scopes[widget.index].extremum.lastKey()!.toDouble() + 2,
           minX: scopes[widget.index].lines[0].points.first.x,
           maxX: scopes[widget.index].lines[0].points.last.x,
           lineTouchData: LineTouchData(enabled: false),
@@ -261,5 +276,44 @@ class _ScopeState extends State<Scope> {
       timer!.cancel();
     }
     super.dispose();
+  }
+}
+
+//?-------------------------
+//?            示波器下拉菜单
+//?=========================
+enum Options { management }
+
+class PopupMenu extends StatefulWidget {
+  PopupMenu({Key? key, required this.handleManage}) : super(key: key);
+
+  Function handleManage;
+
+  @override
+  State<PopupMenu> createState() => _PopupMenuState();
+}
+
+class _PopupMenuState extends State<PopupMenu> {
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<Options>(
+      onSelected: (Options result) {
+        switch (result) {
+          case Options.management:
+            widget.handleManage();
+            break;
+        }
+      },
+      icon: const Icon(Icons.arrow_drop_down),
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<Options>>[
+        const PopupMenuItem<Options>(
+          value: Options.management,
+          child: ListTile(
+            leading: Icon(Icons.rule),
+            title: Text('Data Management'),
+          ),
+        ),
+      ],
+    );
   }
 }
