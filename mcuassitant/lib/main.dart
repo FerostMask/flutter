@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mcuassitant/devmanage.dart';
-import 'package:mcuassitant/scope.dart';
+import 'package:mcuassitant/newscope.dart';
 // import 'package:mcuassitant/network.dart';
 
 void main() {

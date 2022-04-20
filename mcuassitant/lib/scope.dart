@@ -49,7 +49,7 @@ class _ScopePageState extends State<ScopePage> {
 }
 
 //?-------------------------
-//?         线类 | 描述线属性
+//?                     线类
 //?=========================
 class Line {
   Line({

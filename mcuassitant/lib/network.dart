@@ -13,12 +13,13 @@ class Device {
   Device({required this.receivePort, required this.sendPort}) {
     permanentParsing.add(_handleScopeList);
     permanentParsing.add(_handleScopeValue);
+    scopeData.addAll({'test': 1});
   }
   static String defaultSelectDeivce = 'No Device Select';
 
   bool bind = false; // 设备绑定
   Map<String, String> deviceMap = {defaultSelectDeivce: ''}; // 设备表
-  Map<String, double> scopeData = HashMap(); // 示波器数据表
+  Map<String, double> scopeData = HashMap(); // 示波器数据表 | 无序
   String? selectDeivce;
   String? destinationIP;
 
