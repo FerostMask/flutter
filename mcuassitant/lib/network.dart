@@ -71,13 +71,13 @@ class Device {
     receivers.add(receiver);
     // 监听端口
     receivers[receivers.length - 1]
-        .asStream(timeout: const Duration(seconds: 60))
+        .asStream(timeout: const Duration(seconds: 120)) // 120秒后关闭
         .listen((datagram) {
       // 接收并处理数据
       if (datagram != null) {
         rcvContent = String.fromCharCodes(datagram.data);
         if (rcvContent != null && rcvContent!.isNotEmpty) {
-          print(rcvContent);
+          // print(rcvContent); //? 调试输出
           _parsing!(rcvContent!);
           // 执行常驻分析
           if (permanentParsing.isNotEmpty) {

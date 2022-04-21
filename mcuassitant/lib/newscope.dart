@@ -13,7 +13,6 @@ class ScopeBox {
   ScopeBox();
 
   double xValue = 0; // x坐标值
-  var extremum = SplayTreeMap<int, int>((a, b) => a.compareTo(b));
   List<Line> lines = []; // 显示的数据 | 线的形式
   List<Map<String, bool>> options = [HashMap()];
 
@@ -54,13 +53,44 @@ class ScopeBox {
         }
       }
     }
-    // for (var devs in dataNameList) {
-    //   for (var dataName in devs) {
-    //     if (options[dataName] == null) {
-    //       options.addAll({dataName: false});
-    //     }
-    //   }
-    // }
+  }
+
+  double getMinimum() {
+    late int minimum;
+    if (lines.isNotEmpty) {
+      if (lines[0].extremum.firstKey() != null) {
+        minimum = lines[0].extremum.firstKey()!;
+        for (var line in lines) {
+          // //!BUG调试
+          // print(line.extremum);
+          if (line.extremum.firstKey() != null) {
+            if (minimum > line.extremum.firstKey()!) {
+              minimum = line.extremum.firstKey()!;
+            }
+          }
+        }
+        return (minimum - 2).toDouble();
+      }
+    }
+    return -2;
+  }
+
+  double getMaximum() {
+    late int maximum;
+    if (lines.isNotEmpty) {
+      if (lines[0].extremum.lastKey() != null) {
+        maximum = lines[0].extremum.lastKey()!;
+        for (var line in lines) {
+          if (line.extremum.lastKey() != null) {
+            if (maximum > line.extremum.lastKey()!) {
+              maximum = line.extremum.lastKey()!;
+            }
+          }
+        }
+        return (maximum + 2).toDouble();
+      }
+    }
+    return 2;
   }
 
   static List<List<String>> dataNameList = [];
@@ -84,7 +114,7 @@ class Line {
     required this.dataName,
   });
   var points = <FlSpot>[const FlSpot(0, 0)];
-
+  var extremum = SplayTreeMap<int, int>((a, b) => a.compareTo(b));
   final int deviceIndex;
   final String dataName;
   LineStyle style = LineStyle(
@@ -213,19 +243,20 @@ class _ScopeState extends State<Scope> {
       for (var line in scopes[widget.index].lines) {
         while (line.points.length > limitCount) {
           // 获取要删除的点在Map中的Key
-          String popPoint = line.points.last.toString();
+          String popPoint = line.points.first.toString();
           popPoint = popPoint.substring(2, popPoint.length - 1); // 去掉括号
           List popPair = popPoint.split(',');
           int deleteValue =
               double.parse(popPair[1]).toInt(); // 因为源数据是浮点型，所以先转浮点型
-          // 利用有序哈希处理上下界
-          if (scopes[widget.index].extremum[deleteValue]! > 1) {
-            // 数量大于1，count--
-            scopes[widget.index].extremum[deleteValue] =
-                scopes[widget.index].extremum[deleteValue]! - 1;
-          } else {
-            // 数量小于等于1，从Map中删除键值对
-            scopes[widget.index].extremum.remove(deleteValue);
+          if (line.extremum[deleteValue] != null) {
+            // 利用有序哈希处理上下界
+            if (line.extremum[deleteValue]! > 1) {
+              // 数量大于1，count--
+              line.extremum[deleteValue] = line.extremum[deleteValue]! - 1;
+            } else {
+              // 数量小于等于1，从Map中删除键值对
+              line.extremum.remove(deleteValue);
+            }
           }
           line.points.removeAt(0);
         }
@@ -238,12 +269,11 @@ class _ScopeState extends State<Scope> {
           // 利用有序哈希处理上下界
           if (pushValue != null) {
             addValue = pushValue.toInt();
-            if (scopes[widget.index].extremum[addValue] != null) {
+            if (line.extremum[addValue] != null) {
               //count++
-              scopes[widget.index].extremum[addValue] =
-                  scopes[widget.index].extremum[addValue]! + 1;
+              line.extremum[addValue] = line.extremum[addValue]! + 1;
             } else {
-              scopes[widget.index].extremum.addAll({addValue: 1});
+              line.extremum.addAll({addValue: 1});
             }
           }
         }
@@ -308,12 +338,8 @@ class _ScopeState extends State<Scope> {
   Widget _buildScope() {
     return LineChart(
       LineChartData(
-          minY: scopes[widget.index].extremum.firstKey() == null
-              ? -1
-              : scopes[widget.index].extremum.firstKey()! - 2,
-          maxY: scopes[widget.index].extremum.lastKey() == null
-              ? 1
-              : scopes[widget.index].extremum.lastKey()!.toDouble() + 2,
+          minY: scopes[widget.index].getMinimum(),
+          maxY: scopes[widget.index].getMaximum(),
           minX: scopes[widget.index].lines[0].points.first.x,
           maxX: scopes[widget.index].lines[0].points.last.x,
           lineTouchData: LineTouchData(enabled: false),
