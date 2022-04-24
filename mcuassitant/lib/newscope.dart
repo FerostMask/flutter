@@ -61,13 +61,15 @@ class ScopeBox {
       if (lines[0].extremum.firstKey() != null) {
         minimum = lines[0].extremum.firstKey()!;
         for (var line in lines) {
-          // //!BUG调试
-          // print(line.extremum);
           if (line.extremum.firstKey() != null) {
             if (minimum > line.extremum.firstKey()!) {
               minimum = line.extremum.firstKey()!;
             }
           }
+        }
+        //? 临时之举，有小于1的数都会被归为0，全部小于1就崩了
+        if (minimum == 0) {
+          return -0.5; //! 临时调整示波器上下界
         }
         return (minimum - 2).toDouble();
       }
@@ -86,6 +88,9 @@ class ScopeBox {
               maximum = line.extremum.lastKey()!;
             }
           }
+        }
+        if (maximum == 0) {
+          return 0.5; //! 临时调整示波器上下界
         }
         return (maximum + 2).toDouble();
       }
@@ -227,7 +232,7 @@ class _ScopeState extends State<Scope> {
         colors: line.style.colors,
         colorStops: line.style.stops,
         barWidth: line.style.width,
-        isCurved: false,
+        isCurved: true,
       ));
     }
   }
@@ -235,11 +240,11 @@ class _ScopeState extends State<Scope> {
   @override
   void initState() {
     super.initState();
-    if (scopes[widget.index].lines.isEmpty) {
-      return;
-    }
+    // if (scopes[widget.index].lines.isEmpty) {
+    //   return;
+    // }
     generateLines();
-    timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+    timer = Timer.periodic(const Duration(milliseconds: 20), (timer) {
       for (var line in scopes[widget.index].lines) {
         while (line.points.length > limitCount) {
           // 获取要删除的点在Map中的Key
@@ -298,6 +303,29 @@ class _ScopeState extends State<Scope> {
     );
   }
 
+//? 颜色管理
+  void _handleColor() {
+    List<List<Color>> colorForm = [
+      [
+        Colors.lightBlueAccent[700]!.withOpacity(0),
+        Colors.lightBlueAccent[700]!,
+      ],
+      [
+        Colors.green[300]!.withOpacity(0),
+        Colors.green[300]!,
+      ],
+      [
+        Colors.red[300]!.withOpacity(0),
+        Colors.red[300]!,
+      ],
+    ];
+    int index = 0;
+    for (var line in scopes[widget.index].lines) {
+      index = (index + 1) % colorForm.length;
+      line.style.colors = colorForm[index];
+    }
+  }
+
 //?-------------------------
 //?                   示波器
 //?=========================
@@ -320,6 +348,7 @@ class _ScopeState extends State<Scope> {
               padding: const EdgeInsets.only(top: 10, left: 550),
               child: PopupMenu(
                 handleManage: _handleManage,
+                handleColor: _handleColor,
               ),
             ),
             SizedBox(
@@ -368,12 +397,14 @@ class _ScopeState extends State<Scope> {
 //?-------------------------
 //?            示波器下拉菜单
 //?=========================
-enum Options { management }
+enum Options { management, style }
 
 class PopupMenu extends StatefulWidget {
-  PopupMenu({Key? key, required this.handleManage}) : super(key: key);
+  PopupMenu({Key? key, required this.handleManage, required this.handleColor})
+      : super(key: key);
 
   Function handleManage;
+  Function handleColor;
 
   @override
   State<PopupMenu> createState() => _PopupMenuState();
@@ -388,6 +419,9 @@ class _PopupMenuState extends State<PopupMenu> {
           case Options.management:
             widget.handleManage();
             break;
+          case Options.style:
+            widget.handleColor();
+            break;
         }
       },
       icon: const Icon(Icons.arrow_drop_down),
@@ -397,6 +431,13 @@ class _PopupMenuState extends State<PopupMenu> {
           child: ListTile(
             leading: Icon(Icons.rule),
             title: Text('Data Manage'),
+          ),
+        ),
+        const PopupMenuItem<Options>(
+          value: Options.style,
+          child: ListTile(
+            leading: Icon(Icons.palette),
+            title: Text('Color'),
           ),
         ),
       ],
