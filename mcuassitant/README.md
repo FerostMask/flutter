@@ -41,7 +41,7 @@ MCU调试助手
 
 ### 2022.4.21 完成示波器基本功能
 
-![image-20220421010234429](C:\Users\Szasd\AppData\Roaming\Typora\typora-user-images\image-20220421010234429.png)
+![image-20220421010234429](https://ferost-myphotos.oss-cn-shenzhen.aliyuncs.com/202204210107244.png)
 
 效果可以说是非常的amazing啊，现在可以选择显示来自不同设备的不同数据。
 

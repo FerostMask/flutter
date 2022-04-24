@@ -13,7 +13,6 @@ class ScopeBox {
   ScopeBox();
 
   double xValue = 0; // x坐标值
-  var extremum = SplayTreeMap<int, int>((a, b) => a.compareTo(b));
   List<Line> lines = []; // 显示的数据 | 线的形式
   List<Map<String, bool>> options = [HashMap()];
 
@@ -54,13 +53,49 @@ class ScopeBox {
         }
       }
     }
-    // for (var devs in dataNameList) {
-    //   for (var dataName in devs) {
-    //     if (options[dataName] == null) {
-    //       options.addAll({dataName: false});
-    //     }
-    //   }
-    // }
+  }
+
+  double getMinimum() {
+    late int minimum;
+    if (lines.isNotEmpty) {
+      if (lines[0].extremum.firstKey() != null) {
+        minimum = lines[0].extremum.firstKey()!;
+        for (var line in lines) {
+          if (line.extremum.firstKey() != null) {
+            if (minimum > line.extremum.firstKey()!) {
+              minimum = line.extremum.firstKey()!;
+            }
+          }
+        }
+        //? 临时之举，有小于1的数都会被归为0，全部小于1就崩了
+        if (minimum == 0) {
+          return -0.5; //! 临时调整示波器上下界
+        }
+        return (minimum - 2).toDouble();
+      }
+    }
+    return -2;
+  }
+
+  double getMaximum() {
+    late int maximum;
+    if (lines.isNotEmpty) {
+      if (lines[0].extremum.lastKey() != null) {
+        maximum = lines[0].extremum.lastKey()!;
+        for (var line in lines) {
+          if (line.extremum.lastKey() != null) {
+            if (maximum > line.extremum.lastKey()!) {
+              maximum = line.extremum.lastKey()!;
+            }
+          }
+        }
+        if (maximum == 0) {
+          return 0.5; //! 临时调整示波器上下界
+        }
+        return (maximum + 2).toDouble();
+      }
+    }
+    return 2;
   }
 
   static List<List<String>> dataNameList = [];
@@ -84,7 +119,7 @@ class Line {
     required this.dataName,
   });
   var points = <FlSpot>[const FlSpot(0, 0)];
-
+  var extremum = SplayTreeMap<int, int>((a, b) => a.compareTo(b));
   final int deviceIndex;
   final String dataName;
   LineStyle style = LineStyle(
@@ -197,7 +232,7 @@ class _ScopeState extends State<Scope> {
         colors: line.style.colors,
         colorStops: line.style.stops,
         barWidth: line.style.width,
-        isCurved: false,
+        isCurved: true,
       ));
     }
   }
@@ -205,27 +240,28 @@ class _ScopeState extends State<Scope> {
   @override
   void initState() {
     super.initState();
-    if (scopes[widget.index].lines.isEmpty) {
-      return;
-    }
+    // if (scopes[widget.index].lines.isEmpty) {
+    //   return;
+    // }
     generateLines();
-    timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+    timer = Timer.periodic(const Duration(milliseconds: 20), (timer) {
       for (var line in scopes[widget.index].lines) {
         while (line.points.length > limitCount) {
           // 获取要删除的点在Map中的Key
-          String popPoint = line.points.last.toString();
+          String popPoint = line.points.first.toString();
           popPoint = popPoint.substring(2, popPoint.length - 1); // 去掉括号
           List popPair = popPoint.split(',');
           int deleteValue =
               double.parse(popPair[1]).toInt(); // 因为源数据是浮点型，所以先转浮点型
-          // 利用有序哈希处理上下界
-          if (scopes[widget.index].extremum[deleteValue]! > 1) {
-            // 数量大于1，count--
-            scopes[widget.index].extremum[deleteValue] =
-                scopes[widget.index].extremum[deleteValue]! - 1;
-          } else {
-            // 数量小于等于1，从Map中删除键值对
-            scopes[widget.index].extremum.remove(deleteValue);
+          if (line.extremum[deleteValue] != null) {
+            // 利用有序哈希处理上下界
+            if (line.extremum[deleteValue]! > 1) {
+              // 数量大于1，count--
+              line.extremum[deleteValue] = line.extremum[deleteValue]! - 1;
+            } else {
+              // 数量小于等于1，从Map中删除键值对
+              line.extremum.remove(deleteValue);
+            }
           }
           line.points.removeAt(0);
         }
@@ -238,12 +274,11 @@ class _ScopeState extends State<Scope> {
           // 利用有序哈希处理上下界
           if (pushValue != null) {
             addValue = pushValue.toInt();
-            if (scopes[widget.index].extremum[addValue] != null) {
+            if (line.extremum[addValue] != null) {
               //count++
-              scopes[widget.index].extremum[addValue] =
-                  scopes[widget.index].extremum[addValue]! + 1;
+              line.extremum[addValue] = line.extremum[addValue]! + 1;
             } else {
-              scopes[widget.index].extremum.addAll({addValue: 1});
+              line.extremum.addAll({addValue: 1});
             }
           }
         }
@@ -268,6 +303,29 @@ class _ScopeState extends State<Scope> {
     );
   }
 
+//? 颜色管理
+  void _handleColor() {
+    List<List<Color>> colorForm = [
+      [
+        Colors.lightBlueAccent[700]!.withOpacity(0),
+        Colors.lightBlueAccent[700]!,
+      ],
+      [
+        Colors.green[300]!.withOpacity(0),
+        Colors.green[300]!,
+      ],
+      [
+        Colors.red[300]!.withOpacity(0),
+        Colors.red[300]!,
+      ],
+    ];
+    int index = 0;
+    for (var line in scopes[widget.index].lines) {
+      index = (index + 1) % colorForm.length;
+      line.style.colors = colorForm[index];
+    }
+  }
+
 //?-------------------------
 //?                   示波器
 //?=========================
@@ -290,6 +348,7 @@ class _ScopeState extends State<Scope> {
               padding: const EdgeInsets.only(top: 10, left: 550),
               child: PopupMenu(
                 handleManage: _handleManage,
+                handleColor: _handleColor,
               ),
             ),
             SizedBox(
@@ -308,12 +367,8 @@ class _ScopeState extends State<Scope> {
   Widget _buildScope() {
     return LineChart(
       LineChartData(
-          minY: scopes[widget.index].extremum.firstKey() == null
-              ? -1
-              : scopes[widget.index].extremum.firstKey()! - 2,
-          maxY: scopes[widget.index].extremum.lastKey() == null
-              ? 1
-              : scopes[widget.index].extremum.lastKey()!.toDouble() + 2,
+          minY: scopes[widget.index].getMinimum(),
+          maxY: scopes[widget.index].getMaximum(),
           minX: scopes[widget.index].lines[0].points.first.x,
           maxX: scopes[widget.index].lines[0].points.last.x,
           lineTouchData: LineTouchData(enabled: false),
@@ -342,12 +397,14 @@ class _ScopeState extends State<Scope> {
 //?-------------------------
 //?            示波器下拉菜单
 //?=========================
-enum Options { management }
+enum Options { management, style }
 
 class PopupMenu extends StatefulWidget {
-  PopupMenu({Key? key, required this.handleManage}) : super(key: key);
+  PopupMenu({Key? key, required this.handleManage, required this.handleColor})
+      : super(key: key);
 
   Function handleManage;
+  Function handleColor;
 
   @override
   State<PopupMenu> createState() => _PopupMenuState();
@@ -362,6 +419,9 @@ class _PopupMenuState extends State<PopupMenu> {
           case Options.management:
             widget.handleManage();
             break;
+          case Options.style:
+            widget.handleColor();
+            break;
         }
       },
       icon: const Icon(Icons.arrow_drop_down),
@@ -371,6 +431,13 @@ class _PopupMenuState extends State<PopupMenu> {
           child: ListTile(
             leading: Icon(Icons.rule),
             title: Text('Data Manage'),
+          ),
+        ),
+        const PopupMenuItem<Options>(
+          value: Options.style,
+          child: ListTile(
+            leading: Icon(Icons.palette),
+            title: Text('Color'),
           ),
         ),
       ],
